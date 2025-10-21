@@ -42,27 +42,26 @@
   <div class="galeri-grid" id="galeri"></div>
 
   <script>
-    fetch("https://script.google.com/macros/s/AKfycbziy2MqmqU7Hbk1lX3PIjq5kCJMdlAAsPeLKdC70GW6PIWG0PvdJonRhLRPJfNHKkZwNw/exec")
-      .then(res => res.json())
-      .then(fileIDs => {
-        const galeri = document.getElementById("galeri");
-        fileIDs.forEach(id => {
-  const div = document.createElement("div");
-  div.className = "galeri-item";
-  div.innerHTML = `
-    <a href="https://drive.google.com/file/d/${id}/view" target="_blank">
-      <img src="https://drive.google.com/thumbnail?id=${id}" alt="Sampul Mahasiswa" onerror="this.style.display='none'">
-    </a>
-  `;
-  galeri.appendChild(div);
-});
-
-
-      })
-      .catch(err => {
-        document.getElementById("galeri").innerHTML = "<p style='text-align:center;'>Gagal memuat gambar.</p>";
-        console.error("Galeri error:", err);
-      });
+   fetch("https://script.google.com/macros/s/AKfycbziy2MqmqU7Hbk1lX3PIjq5kCJMdlAAsPeLKdC70GW6PIWG0PvdJonRhLRPJfNHKkZwNw/exec")
+  .then(res => res.json())
+  .then(items => {
+    const galeri = document.getElementById("galeri");
+    items.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "galeri-item";
+      div.innerHTML = `
+        <a href="https://drive.google.com/file/d/${item.id}/view" target="_blank">
+          <img src="https://drive.google.com/thumbnail?id=${item.id}" alt="Sampul ${item.nama}" onerror="this.style.display='none'">
+        </a>
+        <p><strong>${item.nama}</strong></p>
+      `;
+      galeri.appendChild(div);
+    });
+  })
+  .catch(err => {
+    document.getElementById("galeri").innerHTML = "<p style='text-align:center;'>Gagal memuat gambar.</p>";
+    console.error("Galeri error:", err);
+  });
   </script>
 </body>
 </html>
