@@ -50,7 +50,9 @@
   const div = document.createElement("div");
   div.className = "galeri-item";
   div.innerHTML = `
-    <img src="https://drive.google.com/thumbnail?id=${id}" alt="Sampul Mahasiswa" onerror="this.style.display='none'">
+    <a href="https://drive.google.com/file/d/${id}/view" target="_blank">
+  <img src="https://drive.google.com/thumbnail?id=${id}" alt="Sampul Mahasiswa">
+</a>
   `;
   galeri.appendChild(div);
 });
