@@ -1,3 +1,12 @@
+<h1>Galeri Sampul Mahasiswa</h1>
+<div style="text-align:center; margin-bottom:20px;">
+  <label for="filter">Filter Mata Kuliah:</label>
+  <select id="filter">
+    <option value="">Semua</option>
+  </select>
+  <input type="text" id="search" placeholder="Cari Nama Lengkap..." style="margin-left:10px; padding:5px;">
+</div>
+<div class="galeri-grid" id="galeri"></div>
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -42,26 +51,62 @@
   <div class="galeri-grid" id="galeri"></div>
 
   <script>
-   fetch("https://script.google.com/macros/s/AKfycbziy2MqmqU7Hbk1lX3PIjq5kCJMdlAAsPeLKdC70GW6PIWG0PvdJonRhLRPJfNHKkZwNw/exec")
+  let allItems = [];
+
+fetch("https://script.google.com/macros/s/AKfycbziy2MqmqU7Hbk1lX3PIjq5kCJMdlAAsPeLKdC70GW6PIWG0PvdJonRhLRPJfNHKkZwNw/exec")
   .then(res => res.json())
   .then(items => {
-    const galeri = document.getElementById("galeri");
-    items.forEach(item => {
-      const div = document.createElement("div");
-      div.className = "galeri-item";
-      div.innerHTML = `
-        <a href="https://drive.google.com/file/d/${item.id}/view" target="_blank">
-          <img src="https://drive.google.com/thumbnail?id=${item.id}" alt="Sampul ${item.nama}" onerror="this.style.display='none'">
-        </a>
-        <p><strong>${item.nama}</strong></p>
-      `;
-      galeri.appendChild(div);
-    });
+    allItems = items;
+    populateFilter(items);
+    renderGallery(items);
   })
   .catch(err => {
     document.getElementById("galeri").innerHTML = "<p style='text-align:center;'>Gagal memuat gambar.</p>";
     console.error("Galeri error:", err);
   });
+
+function populateFilter(items) {
+  const mataKuliahSet = new Set(items.map(item => item.mataKuliah));
+  const filter = document.getElementById("filter");
+  mataKuliahSet.forEach(mk => {
+    const option = document.createElement("option");
+    option.value = mk;
+    option.textContent = mk;
+    filter.appendChild(option);
+  });
+}
+
+function renderGallery(items) {
+  const galeri = document.getElementById("galeri");
+  galeri.innerHTML = "";
+  items.forEach(item => {
+    const div = document.createElement("div");
+    div.className = "galeri-item";
+    div.innerHTML = `
+      <a href="https://drive.google.com/file/d/${item.id}/view" target="_blank">
+        <img src="https://drive.google.com/thumbnail?id=${item.id}" alt="Sampul ${item.nama}" onerror="this.style.display='none'">
+      </a>
+      <p><strong>${item.nama}</strong><br><small>${item.mataKuliah}</small></p>
+    `;
+    galeri.appendChild(div);
+  });
+}
+
+document.getElementById("filter").addEventListener("change", applyFilters);
+document.getElementById("search").addEventListener("input", applyFilters);
+
+function applyFilters() {
+  const selectedMK = document.getElementById("filter").value.toLowerCase();
+  const searchNama = document.getElementById("search").value.toLowerCase();
+
+  const filtered = allItems.filter(item => {
+    const matchMK = selectedMK === "" || item.mataKuliah.toLowerCase() === selectedMK;
+    const matchNama = item.nama.toLowerCase().includes(searchNama);
+    return matchMK && matchNama;
+  });
+
+  renderGallery(filtered);
+}
   </script>
 </body>
 </html>
