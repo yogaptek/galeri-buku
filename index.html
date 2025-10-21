@@ -47,13 +47,15 @@
       .then(fileIDs => {
         const galeri = document.getElementById("galeri");
         fileIDs.forEach(id => {
-          const div = document.createElement("div");
-          div.className = "galeri-item";
-          div.innerHTML = `
-            <img src="https://drive.google.com/open?id=${id}" alt="Sampul Mahasiswa">
-          `;
-          galeri.appendChild(div);
-        });
+  const div = document.createElement("div");
+  div.className = "galeri-item";
+  div.innerHTML = `
+    <img src="https://drive.google.com/uc?export=view&id=${id}" alt="Sampul Mahasiswa">
+  `;
+  galeri.appendChild(div);
+});
+
+
       })
       .catch(err => {
         document.getElementById("galeri").innerHTML = "<p style='text-align:center;'>Gagal memuat gambar.</p>";
