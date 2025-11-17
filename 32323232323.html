@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Kontrol Skor</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+      background-color: #f0f2f5;
+      font-family: Arial, sans-serif;
+    }
+    .kontrol-layer {
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+    .kontrol-panel {
+      background-color: white;
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.2);
+      padding: 30px;
+      width: 100%;
+      max-width: 600px;
+    }
+    .btn-skoring {
+      font-size: 1rem;
+      padding: 12px;
+      margin-bottom: 10px;
+      width: 100%;
+      border-radius: 8px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="kontrol-layer">
+    <div class="kontrol-panel">
+      <h2 class="text-center mb-4">Kirim Skor ke Layar</h2>
+      <div class="row">
+        <div class="col-6">
+          <button class="btn btn-danger btn-skoring" onclick="sendSkor(10)">Skor 10</button>
+          <button class="btn btn-danger btn-skoring" onclick="sendSkor(20)">Skor 20</button>
+          <button class="btn btn-danger btn-skoring" onclick="sendSkor(30)">Skor 30</button>
+          <button class="btn btn-danger btn-skoring" onclick="sendSkor(40)">Skor 40</button>
+          <button class="btn btn-warning btn-skoring text-dark" onclick="sendSkor(50)">Skor 50</button>
+          <button class="btn btn-warning btn-skoring text-dark" onclick="sendSkor(60)">Skor 60</button>
+        </div>
+        <div class="col-6">
+          <button class="btn btn-info btn-skoring" onclick="sendSkor(70)">Skor 70</button>
+          <button class="btn btn-success btn-skoring" onclick="sendSkor(80)">Skor 80</button>
+          <button class="btn btn-success btn-skoring" onclick="sendSkor(90)">Skor 90</button>
+          <button class="btn btn-success btn-skoring" onclick="sendSkor(100)">Skor 100</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+  <script>
+    var firebaseConfig = {
+      apiKey: "AIzaSyBiS9DczFWbLjb4wX-gnoTRd47qSwM4Z_I",
+      authDomain: "assignment-60132.firebaseapp.com",
+      databaseURL: "https://assignment-60132-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "assignment-60132",
+      storageBucket: "assignment-60132.appspot.com",
+      messagingSenderId: "469676760673",
+      appId: "1:469676760673:web:f95637fe7beb92740f5420"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+
+    function sendSkor(skor) {
+      const data = {
+        skor: skor,
+        label: skor.toString()
+      };
+
+      firebase.database().ref('trigger').set(data)
+        .then(() => console.log(`✅ Skor ${skor} dikirim`))
+        .catch(err => console.error('❌ Gagal kirim:', err));
+    }
+  </script>
+
+</body>
+</html>
