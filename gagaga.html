@@ -227,19 +227,25 @@
 
     // Simulasi skor (bisa diganti dengan Firebase listener)
     function triggerSkor(label, score) {
-      skorDisplay.textContent = label;
-      skorDisplay.style.visibility = "visible";
-      skorDisplay.classList.remove("shake");
-      void skorDisplay.offsetWidth;
-      skorDisplay.classList.add("shake");
-      playFeedbackSound(score);
-      tampilkanGlow();
-      setTimeout(() => {
-        skorDisplay.style.visibility = "hidden";
-        skorDisplay.textContent = "";
-      }, 3000);
-    }
-
+  skorDisplay.textContent = label;
+  skorDisplay.style.visibility = "visible";
+  skorDisplay.classList.remove("shake");
+  void skorDisplay.offsetWidth;
+  skorDisplay.classList.add("shake");
+  playFeedbackSound(score);
+  tampilkanGlow();
+  setTimeout(() => {
+    skorDisplay.style.visibility = "hidden";
+    skorDisplay.textContent = "";
+  }, 3000);
+}
+    firebase.database().ref('trigger').on('value', function(snapshot) {
+  const val = snapshot.val();
+  if (val && typeof val === 'object' && val.label && val.skor !== undefined) {
+    triggerSkor(val.label, parseInt(val.skor));
+    firebase.database().ref('trigger').set('idle');
+  }
+});
     const americanCategories = [
       "Native American Literature", "Realism", "Modernism", "Naturalism", "Romanticism",
       "Declaration of Independence", "Savages", "Transcendentalism", "Slave Narrative", "Colonial Period",
