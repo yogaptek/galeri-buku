@@ -3,8 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tampilan Skor & Kategori</title>
-
+  <title>Tampilan Skor & American Literature</title>
   <style>
     html, body {
       margin: 0;
@@ -95,33 +94,10 @@
       }
     }
 
-    /* Kategori Styling */
-    #filterButtons {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      z-index: 10000;
-    }
-
-    .filterBtn {
-      padding: 8px 14px;
-      margin: 4px;
-      font-size: 14px;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      background-color: #555;
-      color: white;
-    }
-
-    .filterBtn.active {
-      background-color: #007bff;
-    }
-
     #instructions {
       position: absolute;
-      top: 60px;
-      left: 10px;
+      top: 20px;
+      left: 20px;
       max-width: 400px;
       background: #fff;
       color: #000;
@@ -134,8 +110,8 @@
 
     #shuffleBtn {
       position: absolute;
-      top: 300px;
-      left: 10px;
+      top: 200px;
+      left: 20px;
       padding: 10px 20px;
       font-size: 14px;
       background-color: #007bff;
@@ -148,8 +124,8 @@
 
     #categoryContainer {
       position: absolute;
-      top: 360px;
-      left: 10px;
+      top: 260px;
+      left: 20px;
       max-width: 400px;
       display: flex;
       flex-wrap: wrap;
@@ -177,25 +153,11 @@
   <div id="ornamenContainer"></div>
   <div id="glowLayer"></div>
 
-  <div id="filterButtons">
-    <button class="filterBtn active" data-filter="american">Survey of American Literature</button>
-    <button class="filterBtn" data-filter="anglophonic">Survey of Anglophonic Literature</button>
-    <button class="filterBtn" data-filter="novel">The Novel</button>
-  </div>
-
   <div id="instructions">
-    <strong>Instructions</strong><br><br>
-    <span id="novelNotice" style="display:none;">
-      <em>Prepare the novel you have selected.</em><br><br>
-      Once you click <strong>Randomize</strong>, <strong>9 categories</strong> will appear.<br>
-      You may select <strong>one category</strong> and will be asked <strong>up to three data analysis</strong>.<br>
-      You may select <strong>one additional category</strong> without clicking again.
-    </span>
-    <span id="defaultNotice">
-      Once you click <strong>Randomize</strong>, <strong>9 categories</strong> will appear.<br>
-      You may select <strong>one category</strong> and will be asked <strong>up to three questions</strong>.<br>
-      You may select <strong>one additional category</strong> without clicking again.
-    </span>
+    <strong>Survey of American Literature</strong><br><br>
+    Klik tombol <strong>Randomize Category</strong> untuk menampilkan 9 kategori acak.<br>
+    Pilih satu kategori dan siapkan jawaban untuk 3 pertanyaan analisis.<br>
+    Jika perlu, kamu boleh memilih satu kategori tambahan tanpa klik ulang.
   </div>
 
   <button id="shuffleBtn">Randomize Category</button>
@@ -243,7 +205,7 @@
       audioUnlocked = true;
     }
 
-       function getColorBySkor(skor) {
+    function getColorBySkor(skor) {
       if (skor >= 0 && skor <= 29) return '#990000';
       if (skor >= 30 && skor <= 59) return '#ff6600';
       if (skor >= 60 && skor <= 79) return '#ffcc00';
@@ -276,8 +238,7 @@
         ornamen.className = 'ornamen';
         ornamen.textContent = simbol[Math.floor(Math.random() * simbol.length)];
 
-        const startX = Math.random() * 100;
-        const offsetX = (Math.random() - 0.5) * 200;
+                const offsetX = (Math.random() - 0.5) * 200;
         const rotasi = Math.random() * 720 - 360;
 
         ornamen.style.left = `${startX}vw`;
@@ -336,21 +297,6 @@
       "Present your Intellectual Diary in 3 minutes", "Random Question with 80pts", "Ask a question 30pts"
     ];
 
-    const anglophonicCategories = [
-      "Oceania Literature", "African Literature", "Khalil Gibran", "Anglophonic Authors", "Anglophonic Literature",
-      "Post-Colonial Topics", "Crisis Identity", "Slavery", "Political Issue", "Ask a Question for 30pts",
-      "Random Question for 80pts", "The Will of Allah", "A Civil Peace", "Local Color", "Gender Issue",
-      "An Astrologer's Day", "West and East Concept", "Writing Style", "Present your Intellectual Diary in 3 minutes",
-      "Female Fiction", "Stream of Consciousness", "Colonial Legacies"
-    ];
-
-    const novelCategories = [
-      "Climax", "Voice of Narrator", "Tone and Mood", "Setting", "Character and Characterization",
-      "Three Act of Structure", "Resolution", "Theme", "Personal Review", "Random Questions for 80pts",
-      "Symbol and Allegory", "Irony", "Writing Style", "Fabula and Syuzhet", "Plot", "Gothic Literature",
-      "Absurdism", "Modernism", "Romanticism", "Present your Intellectual Diary in 3 minutes", "Social Context"
-    ];
-
     const colors = [
       "#e74c3c", "#3498db", "#2ecc71", "#9b59b6", "#f39c12",
       "#1abc9c", "#e67e22", "#34495e", "#d35400", "#7f8c8d",
@@ -359,41 +305,13 @@
 
     let clickCount = 0;
     const maxClicks = 5;
-    let currentFilter = "american";
 
     const shuffleBtn = document.getElementById("shuffleBtn");
     const container = document.getElementById("categoryContainer");
-    const filterButtons = document.querySelectorAll(".filterBtn");
-    const novelNotice = document.getElementById("novelNotice");
-    const defaultNotice = document.getElementById("defaultNotice");
-
-    filterButtons.forEach(btn => {
-      btn.addEventListener("click", () => {
-        filterButtons.forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
-        currentFilter = btn.dataset.filter;
-        container.innerHTML = "";
-
-        if (currentFilter === "novel") {
-          novelNotice.style.display = "inline";
-          defaultNotice.style.display = "none";
-        } else {
-          novelNotice.style.display = "none";
-          defaultNotice.style.display = "inline";
-        }
-      });
-    });
 
     function shuffleAndDisplay() {
       container.innerHTML = "";
-      let source = [];
-      let limit = 9;
-
-      if (currentFilter === "american") source = americanCategories;
-      else if (currentFilter === "anglophonic") source = anglophonicCategories;
-      else if (currentFilter === "novel") source = novelCategories;
-
-      const shuffled = source.sort(() => 0.5 - Math.random()).slice(0, limit);
+      const shuffled = americanCategories.sort(() => 0.5 - Math.random()).slice(0, 9);
       shuffled.forEach((cat, index) => {
         const div = document.createElement("div");
         div.className = "category";
