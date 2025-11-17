@@ -165,6 +165,7 @@
         </ol>
       </div>
       <button id="shuffleBtn" class="btn btn-primary mt-4">Randomize Category</button>
+      <button onclick="triggerSkor('85', 85)" class="btn btn-success mt-3">Tes Skor 85</button>
     </div>
 
     <div id="rightColumn">
@@ -176,80 +177,73 @@
   <audio id="notBad" src="https://assets.mixkit.co/sfx/download/mixkit-game-notification-wave-2314.mp3" preload="auto"></audio>
   <audio id="goodJob" src="https://assets.mixkit.co/sfx/download/mixkit-achievement-bell-600.mp3" preload="auto"></audio>
   <audio id="applause" src="https://assets.mixkit.co/sfx/download/mixkit-small-crowd-applause-503.mp3" preload="auto"></audio>
-
   <script>
-    const starter = document.getElementById("starter");
-    const layoutWrapper = document.getElementById("layoutWrapper");
-    const skorDisplay = document.getElementById("skorDisplay");
-    const glowLayer = document.getElementById("glowLayer");
-    const shuffleBtn = document.getElementById("shuffleBtn");
-    const container = document.getElementById("categoryContainer");
+  const starter = document.getElementById("starter");
+  const layoutWrapper = document.getElementById("layoutWrapper");
+  const skorDisplay = document.getElementById("skorDisplay");
+  const glowLayer = document.getElementById("glowLayer");
+  const shuffleBtn = document.getElementById("shuffleBtn");
+  const container = document.getElementById("categoryContainer");
 
-    const sounds = {
-      niceTry: document.getElementById("niceTry"),
-      notBad: document.getElementById("notBad"),
-      goodJob: document.getElementById("goodJob"),
-      applause: document.getElementById("applause")
-    };
+  const sounds = {
+    niceTry: document.getElementById("niceTry"),
+    notBad: document.getElementById("notBad"),
+    goodJob: document.getElementById("goodJob"),
+    applause: document.getElementById("applause")
+  };
 
-    let audioUnlocked = false;
-    let clickCount = 0;
-    const maxClicks = 5;
+  let audioUnlocked = false;
+  let clickCount = 0;
+  const maxClicks = 5;
 
-    function unlockAudio() {
-      starter.style.display = "none";
-      layoutWrapper.style.display = "flex";
-      Object.values(sounds).forEach(audio => {
-        audio.play().catch(() => {});
-        audio.pause();
-        audio.currentTime = 0;
-      });
-      audioUnlocked = true;
-    }
-
-    function playFeedbackSound(score) {
-      if (!audioUnlocked) return;
-      Object.values(sounds).forEach(audio => {
-        audio.pause();
-        audio.currentTime = 0;
-      });
-      if (score < 50) sounds.niceTry.play();
-      else if (score < 70) sounds.notBad.play();
-      else if (score < 90) sounds.goodJob.play();
-      else sounds.applause.play();
-    }
-
-    function tampilkanGlow() {
-      glowLayer.style.animation = "none";
-      void glowLayer.offsetWidth;
-      glowLayer.style.animation = "glowBurst 1s ease-out forwards";
-    }
-
-    // Simulasi skor (bisa diganti dengan Firebase listener)
-    function triggerSkor(label, score) {
-  skorDisplay.textContent = label;
-  skorDisplay.style.visibility = "visible";
-  skorDisplay.classList.remove("shake");
-  void skorDisplay.offsetWidth;
-  skorDisplay.classList.add("shake");
-  playFeedbackSound(score);
-  tampilkanGlow();
-  setTimeout(() => {
-    skorDisplay.style.visibility = "hidden";
-    skorDisplay.textContent = "";
-  }, 3000);
-}
-    firebase.database().ref('trigger').on('value', function(snapshot) {
-  const val = snapshot.val();
-  if (val && typeof val === 'object' && val.label && val.skor !== undefined) {
-    triggerSkor(val.label, parseInt(val.skor));
-    firebase.database().ref('trigger').set('idle');
+  function unlockAudio() {
+    starter.style.display = "none";
+    layoutWrapper.style.display = "flex";
+    Object.values(sounds).forEach(audio => {
+      audio.play().catch(() => {});
+      audio.pause();
+      audio.currentTime = 0;
+    });
+    audioUnlocked = true;
   }
-});
-    const americanCategories = [
-      "Native American Literature", "Realism", "Modernism", "Naturalism", "Romanticism",
-      "Declaration of Independence", "Savages", "Transcendentalism", "Slave Narrative", "Colonial Period",
-      "Puritanism", "John Smith", "John Winthrop", "Olaudah Equiano", "Melting Pot and Salad Bowl",    "Self Reliance", "The Cask of Amontillado", "Writing Style", "Local Color", "The Black Minister's Veil",
+
+  function playFeedbackSound(score) {
+    if (!audioUnlocked) return;
+    Object.values(sounds).forEach(audio => {
+      audio.pause();
+      audio.currentTime = 0;
+    });
+    if (score < 50) sounds.niceTry.play();
+    else if (score < 70) sounds.notBad.play();
+    else if (score < 90) sounds.goodJob.play();
+    else sounds.applause.play();
+  }
+
+  function tampilkanGlow() {
+    glowLayer.style.animation = "none";
+    void glowLayer.offsetWidth;
+    glowLayer.style.animation = "glowBurst 1s ease-out forwards";
+  }
+
+  function triggerSkor(label, score) {
+    skorDisplay.textContent = label;
+    skorDisplay.style.visibility = "visible";
+    skorDisplay.classList.remove("shake");
+    void skorDisplay.offsetWidth;
+    skorDisplay.classList.add("shake");
+    playFeedbackSound(score);
+    tampilkanGlow();
+    setTimeout(() => {
+      skorDisplay.style.visibility = "hidden";
+      skorDisplay.textContent = "";
+    }, 3000);
+  }
+
+  const americanCategories = [
+    "Native American Literature", "Realism", "Modernism", "Naturalism", "Romanticism",
+    "Declaration of Independence", "Savages", "Transcendentalism", "Slave Narrative", "Colonial Period",
+    "Puritanism", "John Smith", "John Winthrop", "Olaudah Equiano", "Melting Pot and Salad Bowl",
+    "Self Reliance", "The Cask of Amontillado", "Writing Style", "Local Color", "The Black", "Color", "The Black Minister's Veil",
     "Afro American Voices in Modern Era", "Enlightenment", "What We Talk About When We Talk about Love",
     "Richard Wright", "Langston Hughes", "American Literature in General", "American Authors",
     "Present your Intellectual Diary in 3 minutes", "Random Question with 80pts", "Ask a question 30pts"
@@ -280,5 +274,3 @@
 
   shuffleBtn.addEventListener("click", shuffleAndDisplay);
 </script>
-</body>
-</html>
