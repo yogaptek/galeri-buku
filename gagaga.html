@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Score Display & American Literature</title>
+  <title>American Literature Display</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
     html, body {
@@ -11,66 +11,65 @@
       padding: 0;
       height: 100%;
       width: 100%;
-      overflow: hidden;
       background-color: white;
       font-family: Arial, sans-serif;
-      color: white;
+      overflow: hidden;
     }
 
-    body {
-      overflow-y: hidden;
+    #layoutWrapper {
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      align-items: flex-start;
+      gap: 40px;
+      padding: 40px;
+      height: 100vh;
+      box-sizing: border-box;
+    }
+
+    #leftColumn {
+      width: 40%;
+      max-width: 500px;
+      background-color: #f8f9fa;
+      color: #212529;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    #rightColumn {
+      width: 55%;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .category {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2em;
+      font-weight: bold;
+      padding: 20px;
+      border-radius: 12px;
+      color: #fff;
+      text-align: center;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
     }
 
     #skorDisplay {
-      position: absolute;
+      position: fixed;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
       font-size: 80vh;
       font-weight: bold;
       visibility: hidden;
-      line-height: 1;
-      text-align: center;
-      white-space: nowrap;
-      z-index: 2;
-	  -webkit-text-stroke: 4px orange; /* ketebalan dan warna stroke */
-    }
-
-    #starter {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: black;
+      z-index: 100;
+      -webkit-text-stroke: 4px orange;
       color: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 2em;
-      z-index: 9999;
-      cursor: pointer;
-    }
-
-    #ornamenContainer {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
       pointer-events: none;
-      z-index: 10;
-    }
-
-    .ornamen {
-      position: absolute;
-      font-size: 24px;
-      animation: jatuh 2s linear forwards;
-    }
-
-    @keyframes jatuh {
-      0% { transform: translate(0, 0) rotate(0deg); opacity: 1; }
-      100% { transform: translate(var(--x), 100vh) rotate(var(--r)); opacity: 0; }
     }
 
     #glowLayer {
@@ -80,7 +79,7 @@
       width: 100%;
       height: 100%;
       pointer-events: none;
-      z-index: 1;
+      z-index: 99;
       opacity: 0;
       background: radial-gradient(circle at center, rgba(255,255,255,0.6) 0%, transparent 70%);
       animation: glowBurst 1s ease-out forwards;
@@ -100,6 +99,10 @@
       }
     }
 
+    .shake {
+      animation: shake 0.6s ease-in-out;
+    }
+
     @keyframes shake {
       0% { transform: translate(0, 0); }
       20% { transform: translate(-5px, 0); }
@@ -109,61 +112,58 @@
       100% { transform: translate(0, 0); }
     }
 
-    .shake {
-      animation: shake 0.6s ease-in-out;
+    #ornamenContainer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 98;
     }
 
-    #instructions,
-    #shuffleBtn,
-    #categoryContainer {
-      display: none;
+    .ornamen {
+      position: absolute;
+      font-size: 24px;
+      animation: jatuh 2s linear forwards;
     }
 
-    .category {
-      font-size: 0.9em;
-      font-weight: bold;
-      padding: 12px;
-      border-radius: 10px;
-      color: #fff;
-      min-width: 120px;
-      max-width: 180px;
-      word-wrap: break-word;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    @keyframes jatuh {
+      0% { transform: translate(0, 0) rotate(0deg); opacity: 1; }
+      100% { transform: translate(var(--x), 100vh) rotate(var(--r)); opacity: 0; }
     }
   </style>
 </head>
 <body>
 
   <div id="skorDisplay"></div>
-  <div id="starter" onclick="unlockAudio()">Start</div>
-  <div id="ornamenContainer"></div>
   <div id="glowLayer"></div>
+  <div id="ornamenContainer"></div>
 
-  <div class="container-fluid vh-100 d-flex flex-column justify-content-center align-items-center">
-    <div id="instructions" class="bg-light text-dark p-4 rounded shadow" style="max-width: 600px;">
-      <h4 class="mb-3">Instructions</h4>
-      <ol class="fs-6">
+  <div id="layoutWrapper">
+    <div id="leftColumn">
+      <h4>Instructions</h4>
+      <ol>
         <li>Once you click the <strong>Randomize</strong> button, 9 categories will appear on the screen.</li>
         <li>The button may be used up to five times. Each participant is allowed to click it once.</li>
         <li>You may select one category and will be asked up to three questions based on your choice.</li>
         <li>If you feel your responses are not quite satisfying, you may select one additional category — without clicking the button again.</li>
       </ol>
+      <button id="shuffleBtn" class="btn btn-primary">Randomize Category</button>
     </div>
 
-    <button id="shuffleBtn" class="btn btn-primary mt-4">Randomize Category</button>
-
-    <div id="categoryContainer" class="d-flex flex-wrap justify-content-center align-items-center mt-4 gap-3" style="max-width: 800px;"></div>
+    <div id="rightColumn"></div>
   </div>
 
   <audio id="niceTry" src="https://yogaptek.github.io/suara/drum-roll-and-cymbals.mp3" preload="auto"></audio>
   <audio id="notBad" src="https://assets.mixkit.co/sfx/download/mixkit-game-notification-wave-2314.mp3" preload="auto"></audio>
   <audio id="goodJob" src="https://assets.mixkit.co/sfx/download/mixkit-achievement-bell-600.mp3" preload="auto"></audio>
   <audio id="applause" src="https://assets.mixkit.co/sfx/download/mixkit-small-crowd-applause-503.mp3" preload="auto"></audio>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <script>
-    var firebaseConfig = {
+    const firebaseConfig = {
       apiKey: "AIzaSyBiS9DczFWbLjb4wX-gnoTRd47qSwM4Z_I",
       authDomain: "assignment-60132.firebaseapp.com",
       databaseURL: "https://assignment-60132-default-rtdb.asia-southeast1.firebasedatabase.app",
@@ -172,58 +172,36 @@
       messagingSenderId: "469676760673",
       appId: "1:469676760673:web:f95637fe7beb92740f5420"
     };
-
     firebase.initializeApp(firebaseConfig);
 
-    const skorDisplay = document.getElementById('skorDisplay');
-    const starter = document.getElementById('starter');
-    const ornamenContainer = document.getElementById('ornamenContainer');
-    const glowLayer = document.getElementById('glowLayer');
-    const niceTry = document.getElementById('niceTry');
-    const notBad = document.getElementById('notBad');
-    const goodJob = document.getElementById('goodJob');
-    const applause = document.getElementById('applause');
+    const skorDisplay = document.getElementById("skorDisplay");
+    const glowLayer = document.getElementById("glowLayer");
+    const ornamenContainer = document.getElementById("ornamenContainer");
+    const shuffleBtn = document.getElementById("shuffleBtn");
+    const container = document.getElementById("rightColumn");
 
-    let audioUnlocked = false;
+    const sounds = {
+      niceTry: document.getElementById("niceTry"),
+      notBad: document.getElementById("notBad"),
+      goodJob: document.getElementById("goodJob"),
+      applause: document.getElementById("applause")
+    };
 
-    function unlockAudio() {
-      starter.style.display = 'none';
-      [niceTry, notBad, goodJob, applause].forEach(audio => {
-        audio.play().catch(() => {});
+    function playFeedbackSound(score) {
+      Object.values(sounds).forEach(audio => {
         audio.pause();
         audio.currentTime = 0;
       });
-      audioUnlocked = true;
-
-      document.getElementById('instructions').style.display = 'block';
-      document.getElementById('shuffleBtn').style.display = 'inline-block';
-      document.getElementById('categoryContainer').style.display = 'flex';
+      if (score < 50) sounds.niceTry.play();
+      else if (score < 70) sounds.notBad.play();
+      else if (score < 90) sounds.goodJob.play();
+      else sounds.applause.play();
     }
 
-    function getColorBySkor(skor) {
-      if (skor >= 0 && skor <= 29) return '#990000';
-      if (skor >= 30 && skor <= 59) return '#ff6600';
-      if (skor >= 60 && skor <= 79) return '#ffcc00';
-      if (skor >= 80 && skor <= 100) return '#00cc66';
-      return '#660099';
-    }
-
-    function playFeedbackSound(skor) {
-      if (!audioUnlocked) return;
-      [niceTry, notBad, goodJob, applause].forEach(audio => {
-        audio.pause();
-        audio.currentTime = 0;
-      });
-
-      if (skor >= 0 && skor <= 40) {
-        niceTry.play();
-      } else if (skor >= 41 && skor <= 60) {
-        notBad.play();
-      } else if (skor >= 61 && skor <= 79) {
-        goodJob.play();
-      } else if (skor >= 80 && skor <= 100) {
-        applause.play();
-      }
+    function tampilkanGlow() {
+      glowLayer.style.animation = "none";
+      void glowLayer.offsetWidth;
+      glowLayer.style.animation = "glowBurst 1s ease-out forwards";
     }
 
     function tampilkanOrnamen() {
@@ -232,43 +210,32 @@
         const ornamen = document.createElement('div');
         ornamen.className = 'ornamen';
         ornamen.textContent = simbol[Math.floor(Math.random() * simbol.length)];
-
         const startX = Math.random() * 100;
         const offsetX = (Math.random() - 0.5) * 200;
         const rotasi = Math.random() * 720 - 360;
-
         ornamen.style.left = `${startX}vw`;
         ornamen.style.top = '-50px';
-        ornamen.style.fontSize = `${Math.random() * 20 + 20}px`;
+        ornamen.style.fontSize = `${Math.random() *         20 + 20}px`;
         ornamen.style.setProperty('--x', `${offsetX}px`);
         ornamen.style.setProperty('--r', `${rotasi}deg`);
-
         ornamenContainer.appendChild(ornamen);
         setTimeout(() => ornamen.remove(), 2000);
       }
     }
 
-    function tampilkanGlow() {
-      glowLayer.style.animation = 'none';
-      void glowLayer.offsetWidth;
-      glowLayer.style.animation = 'glowBurst 1s ease-out forwards';
-    }
-
     firebase.database().ref('trigger').on('value', function(snapshot) {
       const val = snapshot.val();
-      if (val && typeof val === 'object' && val.label) {
-        const skor = parseInt(val.skor);
-        const warna = getColorBySkor(skor);
-
-        document.body.style.backgroundColor = warna;
-        document.documentElement.style.backgroundColor = warna;
-
+      if (val && typeof val === 'object' && val.label && val.skor !== undefined) {
+        const score = parseInt(val.skor);
         skorDisplay.textContent = val.label;
         skorDisplay.style.visibility = 'visible';
+        skorDisplay.classList.remove('shake');
+        void skorDisplay.offsetWidth;
+        skorDisplay.classList.add('shake');
 
-        playFeedbackSound(skor);
-        tampilkanOrnamen();
+        playFeedbackSound(score);
         tampilkanGlow();
+        tampilkanOrnamen();
 
         document.querySelectorAll('.category').forEach(cat => {
           cat.classList.add('shake');
@@ -282,21 +249,19 @@
         setTimeout(() => {
           skorDisplay.style.visibility = 'hidden';
           skorDisplay.textContent = '';
-          document.body.style.backgroundColor = 'white';
-          document.documentElement.style.backgroundColor = 'white';
           firebase.database().ref('trigger').set('idle');
         }, 3000);
       }
     });
 
-    const americanCategories = [
+    const categories = [
       "Native American Literature", "Realism", "Modernism", "Naturalism", "Romanticism",
-      "Declaration of Independence", "Savages", "Transcendentalism", "Slave Narrative", "Colonial Period",
-      "Puritanism", "John Smith", "John Winthrop", "Olaudah Equiano", "Melting Pot and Salad Bowl",
-      "Self Reliance", "The Cask of Amontillado", "Writing Style", "Local Color", "The Black Minister's Veil",
-      "Afro American Voices in Modern Era", "Enlightenment", "What We Talk About When We Talk about Love",
-      "Richard Wright", "Langston Hughes", "American Literature in General", "American Authors",
-      "Present your Intellectual Diary in 3 minutes", "Random Question with 80pts", "Ask a question 30pts"
+      "Declaration of Independence", "Savages", "Transcendentalism", "Slave Narrative",
+      "Colonial Period", "Puritanism", "John Smith", "John Winthrop", "Olaudah Equiano",
+      "Melting Pot and Salad Bowl", "Self Reliance", "The Cask of Amontillado", "Writing Style",
+      "Local Color", "The Black Minister's Veil", "Afro American Voices", "Enlightenment",
+      "What We Talk About...", "Richard Wright", "Langston Hughes", "American Authors",
+      "Intellectual Diary", "Random Question 80pts", "Ask a question 30pts"
     ];
 
     const colors = [
@@ -308,29 +273,24 @@
     let clickCount = 0;
     const maxClicks = 5;
 
-    const shuffleBtn = document.getElementById("shuffleBtn");
-    const container = document.getElementById("categoryContainer");
-
     function shuffleAndDisplay() {
-    container.innerHTML = "";
-    const shuffled = americanCategories.sort(() => 0.5 - Math.random()).slice(0, 9);
-    shuffled.forEach((cat, index) => {
-      const div = document.createElement("div");
-      div.className = "category";
-      div.textContent = cat;
-      div.style.backgroundColor = colors[index % colors.length];
-      container.appendChild(div);
-    });
+      container.innerHTML = "";
+      const shuffled = categories.sort(() => 0.5 - Math.random()).slice(0, 9);
+      shuffled.forEach((cat, index) => {
+        const div = document.createElement("div");
+        div.className = "category";
+        div.textContent = cat;
+        div.style.backgroundColor = colors[index % colors.length];
+        container.appendChild(div);
+      });
 
-    clickCount++;
-    if (clickCount >= maxClicks) {
-      shuffleBtn.disabled = true;
+      clickCount++;
+      if (clickCount >= maxClicks) {
+        shuffleBtn.disabled = true;
+      }
     }
-  }
 
-  shuffleBtn.addEventListener("click", shuffleAndDisplay);
-
+    shuffleBtn.addEventListener("click", shuffleAndDisplay);
   </script>
-
 </body>
 </html>
