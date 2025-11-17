@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Score Display & American Literature</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
- <style>
+  <style>
     html, body {
       margin: 0;
       padding: 0;
@@ -120,32 +120,31 @@
     }
 
     #categoryContainer {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
-  height: 100%;
-  align-content: start;
-  justify-items: center;
-}
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      gap: 24px;
+      width: 100%;
+      height: 100%;
+      box-sizing: border-box;
+    }
 
-.category {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  font-size: 2.2em;
-  font-weight: bold;
-  padding: 24px;
-  border-radius: 16px;
-  color: #fff;
-  min-height: 140px;
-  width: 100%;
-  max-width: 100%;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-  word-wrap: break-word;
-}
+    .category {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      font-size: 2em;
+      font-weight: bold;
+      padding: 24px;
+      border-radius: 16px;
+      color: #fff;
+      height: 100%;
+      width: 100%;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      word-wrap: break-word;
+    }
   </style>
-
 </head>
 <body>
 
@@ -178,177 +177,102 @@
   <audio id="goodJob" src="https://assets.mixkit.co/sfx/download/mixkit-achievement-bell-600.mp3" preload="auto"></audio>
   <audio id="applause" src="https://assets.mixkit.co/sfx/download/mixkit-small-crowd-applause-503.mp3" preload="auto"></audio>
 
- <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-
   <script>
-    var firebaseConfig = {
-      apiKey: "AIzaSyBiS9DczFWbLjb4wX-gnoTRd47qSwM4Z_I",
-      authDomain: "assignment-60132.firebaseapp.com",
-      databaseURL: "https://assignment-60132-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "assignment-60132",
-      storageBucket: "assignment-60132.appspot.com",
-      messagingSenderId: "469676760673",
-      appId: "1:469676760673:web:f95637fe7beb92740f5420"
+    const starter = document.getElementById("starter");
+    const layoutWrapper = document.getElementById("layoutWrapper");
+    const skorDisplay = document.getElementById("skorDisplay");
+    const glowLayer = document.getElementById("glowLayer");
+    const shuffleBtn = document.getElementById("shuffleBtn");
+    const container = document.getElementById("categoryContainer");
+
+    const sounds = {
+      niceTry: document.getElementById("niceTry"),
+      notBad: document.getElementById("notBad"),
+      goodJob: document.getElementById("goodJob"),
+      applause: document.getElementById("applause")
     };
 
-    firebase.initializeApp(firebaseConfig);
-
-    const skorDisplay = document.getElementById('skorDisplay');
-    const starter = document.getElementById('starter');
-    const ornamenContainer = document.getElementById('ornamenContainer');
-    const glowLayer = document.getElementById('glowLayer');
-    const niceTry = document.getElementById('niceTry');
-    const notBad = document.getElementById('notBad');
-    const goodJob = document.getElementById('goodJob');
-    const applause = document.getElementById('applause');
-
     let audioUnlocked = false;
+    let clickCount = 0;
+    const maxClicks = 5;
 
     function unlockAudio() {
-      starter.style.display = 'none';
-      [niceTry, notBad, goodJob, applause].forEach(audio => {
+      starter.style.display = "none";
+      layoutWrapper.style.display = "flex";
+      Object.values(sounds).forEach(audio => {
         audio.play().catch(() => {});
         audio.pause();
         audio.currentTime = 0;
       });
       audioUnlocked = true;
-
-      document.getElementById('instructions').style.display = 'block';
-      document.getElementById('shuffleBtn').style.display = 'inline-block';
-      document.getElementById('categoryContainer').style.display = 'flex';
     }
 
-    function getColorBySkor(skor) {
-      if (skor >= 0 && skor <= 29) return '#990000';
-      if (skor >= 30 && skor <= 59) return '#ff6600';
-      if (skor >= 60 && skor <= 79) return '#ffcc00';
-      if (skor >= 80 && skor <= 100) return '#00cc66';
-      return '#660099';
-    }
-
-    function playFeedbackSound(skor) {
+    function playFeedbackSound(score) {
       if (!audioUnlocked) return;
-      [niceTry, notBad, goodJob, applause].forEach(audio => {
+      Object.values(sounds).forEach(audio => {
         audio.pause();
         audio.currentTime = 0;
       });
-
-      if (skor >= 0 && skor <= 40) {
-        niceTry.play();
-      } else if (skor >= 41 && skor <= 60) {
-        notBad.play();
-      } else if (skor >= 61 && skor <= 79) {
-        goodJob.play();
-      } else if (skor >= 80 && skor <= 100) {
-        applause.play();
-      }
-    }
-
-    function tampilkanOrnamen() {
-      const simbol = ['🎉', '✨', '⭐', '💥', '🎈', '🌟'];
-      for (let i = 0; i < 30; i++) {
-        const ornamen = document.createElement('div');
-        ornamen.className = 'ornamen';
-        ornamen.textContent = simbol[Math.floor(Math.random() * simbol.length)];
-
-        const startX = Math.random() * 100;
-        const offsetX = (Math.random() - 0.5) * 200;
-        const rotasi = Math.random() * 720 - 360;
-
-        ornamen.style.left = `${startX}vw`;
-        ornamen.style.top = '-50px';
-        ornamen.style.fontSize = `${Math.random() * 20 + 20}px`;
-        ornamen.style.setProperty('--x', `${offsetX}px`);
-        ornamen.style.setProperty('--r', `${rotasi}deg`);
-
-        ornamenContainer.appendChild(ornamen);
-        setTimeout(() => ornamen.remove(), 2000);
-      }
+      if (score < 50) sounds.niceTry.play();
+      else if (score < 70) sounds.notBad.play();
+      else if (score < 90) sounds.goodJob.play();
+      else sounds.applause.play();
     }
 
     function tampilkanGlow() {
-      glowLayer.style.animation = 'none';
+      glowLayer.style.animation = "none";
       void glowLayer.offsetWidth;
-      glowLayer.style.animation = 'glowBurst 1s ease-out forwards';
+      glowLayer.style.animation = "glowBurst 1s ease-out forwards";
     }
 
-    firebase.database().ref('trigger').on('value', function(snapshot) {
-      const val = snapshot.val();
-      if (val && typeof val === 'object' && val.label) {
-        const skor = parseInt(val.skor);
-        const warna = getColorBySkor(skor);
-
-        document.body.style.backgroundColor = warna;
-        document.documentElement.style.backgroundColor = warna;
-
-        skorDisplay.textContent = val.label;
-        skorDisplay.style.visibility = 'visible';
-
-        playFeedbackSound(skor);
-        tampilkanOrnamen();
-        tampilkanGlow();
-
-        document.querySelectorAll('.category').forEach(cat => {
-          cat.classList.add('shake');
-        });
-        setTimeout(() => {
-          document.querySelectorAll('.category').forEach(cat => {
-            cat.classList.remove('shake');
-          });
-        }, 700);
-
-        setTimeout(() => {
-          skorDisplay.style.visibility = 'hidden';
-          skorDisplay.textContent = '';
-          document.body.style.backgroundColor = 'white';
-          document.documentElement.style.backgroundColor = 'white';
-          firebase.database().ref('trigger').set('idle');
-        }, 3000);
-      }
-    });
+    // Simulasi skor (bisa diganti dengan Firebase listener)
+    function triggerSkor(label, score) {
+      skorDisplay.textContent = label;
+      skorDisplay.style.visibility = "visible";
+      skorDisplay.classList.remove("shake");
+      void skorDisplay.offsetWidth;
+      skorDisplay.classList.add("shake");
+      playFeedbackSound(score);
+      tampilkanGlow();
+      setTimeout(() => {
+        skorDisplay.style.visibility = "hidden";
+        skorDisplay.textContent = "";
+      }, 3000);
+    }
 
     const americanCategories = [
       "Native American Literature", "Realism", "Modernism", "Naturalism", "Romanticism",
       "Declaration of Independence", "Savages", "Transcendentalism", "Slave Narrative", "Colonial Period",
-      "Puritanism", "John Smith", "John Winthrop", "Olaudah Equiano", "Melting Pot and Salad Bowl",
-      "Self Reliance", "The Cask of Amontillado", "Writing Style", "Local Color", "The Black Minister's Veil",
-      "Afro American Voices in Modern Era", "Enlightenment", "What We Talk About When We Talk about Love",
-      "Richard Wright", "Langston Hughes", "American Literature in General", "American Authors",
-      "Present your Intellectual Diary in 3 minutes", "Random Question with 80pts", "Ask a question 30pts"
-    ];
+      "Puritanism", "John Smith", "John Winthrop", "Olaudah Equiano", "Melting Pot and Salad Bowl",    "Self Reliance", "The Cask of Amontillado", "Writing Style", "Local Color", "The Black Minister's Veil",
+    "Afro American Voices in Modern Era", "Enlightenment", "What We Talk About When We Talk about Love",
+    "Richard Wright", "Langston Hughes", "American Literature in General", "American Authors",
+    "Present your Intellectual Diary in 3 minutes", "Random Question with 80pts", "Ask a question 30pts"
+  ];
 
-    const colors = [
-      "#e74c3c", "#3498db", "#2ecc71", "#9b59b6", "#f39c12",
-      "#1abc9c", "#e67e22", "#34495e", "#d35400", "#7f8c8d",
-      "#16a085", "#c0392b", "#2980b9", "#8e44ad", "#27ae60"
-    ];
+  const colors = [
+    "#e74c3c", "#3498db", "#2ecc71", "#9b59b6", "#f39c12",
+    "#1abc9c", "#e67e22", "#34495e", "#d35400", "#7f8c8d",
+    "#16a085", "#c0392b", "#2980b9", "#8e44ad", "#27ae60"
+  ];
 
-    let clickCount = 0;
-    const maxClicks = 5;
+  function shuffleAndDisplay() {
+    container.innerHTML = "";
+    const shuffled = americanCategories.sort(() => 0.5 - Math.random()).slice(0, 9);
+    shuffled.forEach((cat, index) => {
+      const div = document.createElement("div");
+      div.className = "category";
+      div.textContent = cat;
+      div.style.backgroundColor = colors[index % colors.length];
+      container.appendChild(div);
+    });
 
-    const shuffleBtn = document.getElementById("shuffleBtn");
-    const container = document.getElementById("categoryContainer");
-
-    function shuffleAndDisplay() {
-      container.innerHTML = "";
-      const shuffled = americanCategories.sort(() => 0.5 - Math.random()).slice(0, 9);
-      shuffled.forEach((cat, index) => {
-        const div = document.createElement("div");
-        div.className = "category";
-        div.textContent = cat;
-        div.style.backgroundColor = colors[index % colors.length];
-        container.appendChild(div);
-      });
-
-      clickCount++;
-      if (clickCount >= maxClicks) {
-        shuffleBtn.disabled = true;
-      }
+    clickCount++;
+    if (clickCount >= maxClicks) {
+      shuffleBtn.disabled = true;
     }
+  }
 
-    shuffleBtn.addEventListener("click", shuffleAndDisplay);
-  </script>
-
+  shuffleBtn.addEventListener("click", shuffleAndDisplay);
+</script>
 </body>
 </html>
