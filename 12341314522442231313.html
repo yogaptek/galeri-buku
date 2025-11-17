@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Tampilan Skor</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+      transition: background-color 0.5s ease;
+      background-color: white;
+      color: white;
+    }
+
+    #skorDisplay {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 80vh;
+      font-weight: bold;
+      visibility: hidden;
+      line-height: 1;
+      text-align: center;
+      white-space: nowrap;
+      z-index: 2;
+    }
+
+    #starter {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: black;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2em;
+      z-index: 9999;
+      cursor: pointer;
+    }
+
+    #ornamenContainer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .ornamen {
+      position: absolute;
+      font-size: 24px;
+      animation: jatuh 2s linear forwards;
+    }
+
+    @keyframes jatuh {
+      0% {
+        transform: translate(0, 0) rotate(0deg);
+        opacity: 1;
+      }
+      100% {
+        transform: translate(var(--x), 100vh) rotate(var(--r));
+        opacity: 0;
+      }
+    }
+
+    #glowLayer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+      opacity: 0;
+      background: radial-gradient(circle at center, rgba(255,255,255,0.6) 0%, transparent 70%);
+      animation: glowBurst 1s ease-out forwards;
+    }
+
+    @keyframes glowBurst {
+      0% {
+        opacity: 0.8;
+        transform: scale(0.5);
+        filter: blur(20px);
+        background: radial-gradient(circle at center, red, orange, yellow, green, cyan, blue, violet);
+      }
+      100% {
+        opacity: 0;
+        transform: scale(2);
+        filter: blur(60px);
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="skorDisplay"></div>
+  <div id="starter" onclick="unlockAudio()">Mulai</div>
+  <div id="ornamenContainer"></div>
+  <div id="glowLayer"></div>
+
+  <audio id="niceTry" src="https://yogaptek.github.io/suara/drum-roll-and-cymbals.mp3" preload="auto"></audio>
+  <audio id="notBad" src="https://assets.mixkit.co/sfx/download/mixkit-game-notification-wave-2314.mp3" preload="auto"></audio>
+  <audio id="goodJob" src="https://assets.mixkit.co/sfx/download/mixkit-achievement-bell-600.mp3" preload="auto"></audio>
+  <audio id="applause" src="https://assets.mixkit.co/sfx/download/mixkit-small-crowd-applause-503.mp3" preload="auto"></audio>
+
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+  <script>
+    var firebaseConfig = {
+      apiKey: "AIzaSyBiS9DczFWbLjb4wX-gnoTRd47qSwM4Z_I",
+      authDomain: "assignment-60132.firebaseapp.com",
+      databaseURL: "https://assignment-60132-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "assignment-60132",
+      storageBucket: "assignment-60132.appspot.com",
+      messagingSenderId: "469676760673",
+      appId: "1:469676760673:web:f95637fe7beb92740f5420"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+
+    const skorDisplay = document.getElementById('skorDisplay');
+    const starter = document.getElementById('starter');
+    const ornamenContainer = document.getElementById('ornamenContainer');
+    const glowLayer = document.getElementById('glowLayer');
+    const niceTry = document.getElementById('niceTry');
+    const notBad = document.getElementById('notBad');
+    const goodJob = document.getElementById('goodJob');
+    const applause = document.getElementById('applause');
+
+    let audioUnlocked = false;
+
+    function unlockAudio() {
+      starter.style.display = 'none';
+      [niceTry, notBad, goodJob, applause].forEach(audio => {
+        audio.play().catch(() => {});
+        audio.pause();
+        audio.currentTime = 0;
+      });
+      audioUnlocked = true;
+    }
+
+    function getColorBySkor(skor) {
+      if (skor >= 0 && skor <= 29) return '#990000';
+      if (skor >= 30 && skor <= 59) return '#ff6600';
+      if (skor >= 60 && skor <= 79) return '#ffcc00';
+      if (skor >= 80 && skor <= 100) return '#00cc66';
+      return '#660099';
+    }
+
+    function playFeedbackSound(skor) {
+      if (!audioUnlocked) return;
+      [niceTry, notBad, goodJob, applause].forEach(audio => {
+        audio.pause();
+        audio.currentTime = 0;
+      });
+
+      if (skor >= 0 && skor <= 40) {
+        niceTry.play();
+      } else if (skor >= 41 && skor <= 60) {
+        notBad.play();
+      } else if (skor >= 61 && skor <= 79) {
+        goodJob.play();
+      } else if (skor >= 80 && skor <= 100) {
+        applause.play();
+      }
+    }
+
+    function tampilkanOrnamen() {
+      const simbol = ['🎉', '✨', '⭐', '💥', '🎈', '🌟'];
+      for (let i = 0; i < 30; i++) {
+        const ornamen = document.createElement('div');
+        ornamen.className = 'ornamen';
+        ornamen.textContent = simbol[Math.floor(Math.random() * simbol.length)];
+
+        const startX = Math.random() * 100;
+        const offsetX = (Math.random() - 0.5) * 200;
+        const rotasi = Math.random() * 720 - 360;
+
+        ornamen.style.left = `${startX}vw`;
+        ornamen.style.top = '-50px';
+        ornamen.style.fontSize = `${Math.random() * 20 + 20}px`;
+        ornamen.style.setProperty('--x', `${offsetX}px`);
+        ornamen.style.setProperty('--r', `${rotasi}deg`);
+
+        ornamenContainer.appendChild(ornamen);
+        setTimeout(() => ornamen.remove(), 2000);
+      }
+    }
+
+    function tampilkanGlow() {
+      glowLayer.style.animation = 'none';
+      void glowLayer.offsetWidth;
+      glowLayer.style.animation = 'glowBurst 1s ease-out forwards';
+    }
+
+    firebase.database().ref('trigger').on('value', function(snapshot) {
+      const val = snapshot.val();
+      console.log('📡 Data diterima:', val);
+
+      if (val && typeof val === 'object' && val.label) {
+        const skor = parseInt(val.skor);
+        const warna = getColorBySkor(skor);
+
+        document.body.style.backgroundColor = warna;
+        document.documentElement.style.backgroundColor = warna;
+
+        skorDisplay.textContent = val.label;
+        skorDisplay.style.visibility = 'visible';
+
+        playFeedbackSound(skor);
+        tampilkanOrnamen();
+        tampilkanGlow();
+
+        setTimeout(() => {
+          skorDisplay.style.visibility = 'hidden';
+          skorDisplay.textContent = '';
+          document.body.style.backgroundColor = 'white';
+          document.documentElement.style.backgroundColor = 'white';
+          firebase.database().ref('trigger').set('idle');
+        }, 3000);
+      }
+    });
+  </script>
+
+</body>
+</html
