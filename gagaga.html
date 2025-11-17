@@ -134,6 +134,23 @@
     }
   </style>
 </head>
+  <div id="starter" onclick="unlockAudio()" style="
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: black;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2em;
+  z-index: 9999;
+  cursor: pointer;
+">
+  Start
+</div>
 <body>
 
   <div id="skorDisplay"></div>
@@ -291,6 +308,16 @@
     }
 
     shuffleBtn.addEventListener("click", shuffleAndDisplay);
+    function unlockAudio() {
+  document.getElementById("starter").style.display = "none";
+
+  // Paksa browser untuk mengizinkan audio
+  Object.values(sounds).forEach(audio => {
+    audio.play().catch(() => {});
+    audio.pause();
+    audio.currentTime = 0;
+  });
+}
   </script>
 </body>
 </html>
