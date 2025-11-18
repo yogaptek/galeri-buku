@@ -177,6 +177,7 @@
   <audio id="notBad" src="https://assets.mixkit.co/sfx/download/mixkit-game-notification-wave-2314.mp3" preload="auto"></audio>
   <audio id="goodJob" src="https://yogaptek.github.io/suara/goodjob.mp3" preload="auto"></audio>
   <audio id="applause" src="https://yogaptek.github.io/suara/perfect.mp3" preload="auto"></audio>
+  <audio id="shuffleSound" src="https://yogaptek.github.io/suara/waterdrop.mp3" preload="auto"></audio>
 
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -202,7 +203,8 @@
       niceTry: document.getElementById("niceTry"),
       notBad: document.getElementById("notBad"),
       goodJob: document.getElementById("goodJob"),
-      applause: document.getElementById("applause")
+      applause: document.getElementById("applause"),
+      shuffle: document.getElementById("shuffleSound")
     };
 
     function playFeedbackSound(score) {
@@ -289,6 +291,7 @@
     const maxClicks = 5;
 
     function shuffleAndDisplay() {
+      sounds.shuffle.play().catch(() => {});
       container.innerHTML = "";
       const shuffled = categories.sort(() => 0.5 - Math.random()).slice(0, 9);
       shuffled.forEach((cat, index) => {
