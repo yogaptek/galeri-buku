@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Survey of Anglophone Literature</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+      background-color: white;
+      font-family: Arial, sans-serif;
+      overflow: hidden;
+    }
+
+    #layoutWrapper {
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      align-items: flex-start;
+      gap: 40px;
+      padding: 40px;
+      height: 100vh;
+      box-sizing: border-box;
+    }
+
+    #leftColumn {
+      width: 40%;
+      max-width: 500px;
+      background-color: #f8f9fa;
+      color: #212529;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    #rightColumn {
+      width: 55%;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .category {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2em;
+      font-weight: bold;
+      padding: 20px;
+      border-radius: 12px;
+      color: #fff;
+      text-align: center;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+
+    #skorDisplay {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 80vh;
+      font-weight: bold;
+      visibility: hidden;
+      z-index: 100;
+      -webkit-text-stroke: 4px orange;
+      color: white;
+      pointer-events: none;
+    }
+
+    #glowLayer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 99;
+      opacity: 0;
+      background: radial-gradient(circle at center, rgba(255,255,255,0.6) 0%, transparent 70%);
+      animation: glowBurst 1s ease-out forwards;
+    }
+
+    @keyframes glowBurst {
+      0% {
+        opacity: 0.8;
+        transform: scale(0.5);
+        filter: blur(20px);
+        background: radial-gradient(circle at center, red, orange, yellow, green, cyan, blue, violet);
+      }
+      100% {
+        opacity: 0;
+        transform: scale(2);
+        filter: blur(60px);
+      }
+    }
+
+    .shake {
+      animation: shake 0.6s ease-in-out;
+    }
+
+    @keyframes shake {
+      0% { transform: translate(0, 0); }
+      20% { transform: translate(-5px, 0); }
+      40% { transform: translate(5px, 0); }
+      60% { transform: translate(-5px, 0); }
+      80% { transform: translate(5px, 0); }
+      100% { transform: translate(0, 0); }
+    }
+
+    #ornamenContainer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 98;
+    }
+
+    .ornamen {
+      position: absolute;
+      font-size: 24px;
+      animation: jatuh 2s linear forwards;
+    }
+
+    @keyframes jatuh {
+      0% { transform: translate(0, 0) rotate(0deg); opacity: 1; }
+      100% { transform: translate(var(--x), 100vh) rotate(var(--r)); opacity: 0; }
+    }
+  </style>
+</head>
+  <div id="starter" onclick="unlockAudio()" style="
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: black;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2em;
+  z-index: 9999;
+  cursor: pointer;
+">
+  Start
+</div>
+<body>
+
+  <div id="skorDisplay"></div>
+  <div id="glowLayer"></div>
+  <div id="ornamenContainer"></div>
+
+  <div id="layoutWrapper">
+    <div id="leftColumn">
+      <h4>Instructions</h4>
+      <ol>
+        <li>Our assessment is conducted under strict some rules.</li>
+        <li>Once you click the <strong>Randomize</strong> button, 9 categories will appear on the screen.</li>
+        <li>The button may be used up to five times. Each participant must click the button once.</li>
+        <li>You may select one category and will be asked up to three questions based on your choice.</li>
+        <li>If you feel your responses are not quite satisfying, you may select one additional category — without clicking the button again.</li>
+      </ol>
+      <button id="shuffleBtn" class="btn btn-primary">Randomize Category</button>
+    </div>
+
+    <div id="rightColumn"></div>
+  </div>
+
+  <audio id="niceTry" src="https://yogaptek.github.io/suara/nicetry.m4a" preload="auto"></audio>
+  <audio id="notBad" src="https://assets.mixkit.co/sfx/download/mixkit-game-notification-wave-2314.mp3" preload="auto"></audio>
+  <audio id="goodJob" src="https://yogaptek.github.io/suara/goodjob.m4a" preload="auto"></audio>
+  <audio id="applause" src="https://yogaptek.github.io/suara/perfect.m4a" preload="auto"></audio>
+
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBiS9DczFWbLjb4wX-gnoTRd47qSwM4Z_I",
+      authDomain: "assignment-60132.firebaseapp.com",
+      databaseURL: "https://assignment-60132-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "assignment-60132",
+      storageBucket: "assignment-60132.appspot.com",
+      messagingSenderId: "469676760673",
+      appId: "1:469676760673:web:f95637fe7beb92740f5420"
+    };
+    firebase.initializeApp(firebaseConfig);
+
+    const skorDisplay = document.getElementById("skorDisplay");
+    const glowLayer = document.getElementById("glowLayer");
+    const ornamenContainer = document.getElementById("ornamenContainer");
+    const shuffleBtn = document.getElementById("shuffleBtn");
+    const container = document.getElementById("rightColumn");
+
+    const sounds = {
+      niceTry: document.getElementById("niceTry"),
+      notBad: document.getElementById("notBad"),
+      goodJob: document.getElementById("goodJob"),
+      applause: document.getElementById("applause")
+    };
+
+    function playFeedbackSound(score) {
+      Object.values(sounds).forEach(audio => {
+        audio.pause();
+        audio.currentTime = 0;
+      });
+      if (score < 50) sounds.niceTry.play();
+      else if (score < 70) sounds.notBad.play();
+      else if (score < 90) sounds.goodJob.play();
+      else sounds.applause.play();
+    }
+
+    function tampilkanGlow() {
+      glowLayer.style.animation = "none";
+      void glowLayer.offsetWidth;
+      glowLayer.style.animation = "glowBurst 1s ease-out forwards";
+    }
+
+    function tampilkanOrnamen() {
+      const simbol = ['🎉', '✨', '⭐', '💥', '🎈', '🌟'];
+      for (let i = 0; i < 30; i++) {
+        const ornamen = document.createElement('div');
+        ornamen.className = 'ornamen';
+        ornamen.textContent = simbol[Math.floor(Math.random() * simbol.length)];
+        const startX = Math.random() * 100;
+        const offsetX = (Math.random() - 0.5) * 200;
+        const rotasi = Math.random() * 720 - 360;
+        ornamen.style.left = `${startX}vw`;
+        ornamen.style.top = '-50px';
+        ornamen.style.fontSize = `${Math.random() *         20 + 20}px`;
+        ornamen.style.setProperty('--x', `${offsetX}px`);
+        ornamen.style.setProperty('--r', `${rotasi}deg`);
+        ornamenContainer.appendChild(ornamen);
+        setTimeout(() => ornamen.remove(), 2000);
+      }
+    }
+
+    firebase.database().ref('trigger').on('value', function(snapshot) {
+      const val = snapshot.val();
+      if (val && typeof val === 'object' && val.label && val.skor !== undefined) {
+        const score = parseInt(val.skor);
+        skorDisplay.textContent = val.label;
+        skorDisplay.style.visibility = 'visible';
+        skorDisplay.classList.remove('shake');
+        void skorDisplay.offsetWidth;
+        skorDisplay.classList.add('shake');
+
+        playFeedbackSound(score);
+        tampilkanGlow();
+        tampilkanOrnamen();
+
+        document.querySelectorAll('.category').forEach(cat => {
+          cat.classList.add('shake');
+        });
+        setTimeout(() => {
+          document.querySelectorAll('.category').forEach(cat => {
+            cat.classList.remove('shake');
+          });
+        }, 700);
+
+        setTimeout(() => {
+          skorDisplay.style.visibility = 'hidden';
+          skorDisplay.textContent = '';
+          firebase.database().ref('trigger').set('idle');
+        }, 3000);
+      }
+    });
+
+    const categories = [
+     "Oceania Literature", "African Literature", "Khalil Gibran", "Anglophonic Authors", "Anglophonic Literature",
+      "Post-Colonial Topics", "Crisis Identity", "Slavery", "Political Issue", "Ask a Question for 30pts",
+      "Random Question for 80pts", "The Will of Allah", "A Civil Peace", "Local Color", "Gender Issue", "An Astrologer's Day",
+      "West and East Concept", "Writing Style", "Present your Intellectual Diary in 3 minutes","Female Fiction", "Stream of Consciousness", "Colonial Legacies"
+    ];
+
+    const colors = [
+      "#e74c3c", "#3498db", "#2ecc71", "#9b59b6", "#f39c12",
+      "#1abc9c", "#e67e22", "#34495e", "#d35400", "#7f8c8d",
+      "#16a085", "#c0392b", "#2980b9", "#8e44ad", "#27ae60"
+    ];
+
+    let clickCount = 0;
+    const maxClicks = 5;
+
+    function shuffleAndDisplay() {
+      container.innerHTML = "";
+      const shuffled = categories.sort(() => 0.5 - Math.random()).slice(0, 9);
+      shuffled.forEach((cat, index) => {
+        const div = document.createElement("div");
+        div.className = "category";
+        div.textContent = cat;
+        div.style.backgroundColor = colors[index % colors.length];
+        container.appendChild(div);
+      });
+
+      clickCount++;
+      if (clickCount >= maxClicks) {
+        shuffleBtn.disabled = true;
+      }
+    }
+
+    shuffleBtn.addEventListener("click", shuffleAndDisplay);
+    function unlockAudio() {
+  document.getElementById("starter").style.display = "none";
+
+  // Paksa browser untuk mengizinkan audio
+  Object.values(sounds).forEach(audio => {
+    audio.play().catch(() => {});
+    audio.pause();
+    audio.currentTime = 0;
+  });
+}
+  </script>
+</body>
+</html>
