@@ -1,81 +1,91 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8">
-    <title>Babylon.js FPS Demo</title>
-    <style>
-        html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; }
-        canvas { width: 100%; height: 100%; display: block; }
-    </style>
+  <meta charset="utf-8">
+  <title>Babylon.js FPS Denah</title>
+  <style>
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; }
+    canvas { width: 100%; height: 100%; display: block; }
+  </style>
 </head>
 <body>
-    <canvas id="renderCanvas"></canvas>
+  <canvas id="renderCanvas"></canvas>
 
-    <!-- CDN Babylon.js -->
-    <script src="https://cdn.babylonjs.com/babylon.js"></script>
-    <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+  <!-- Babylon.js CDN -->
+  <script src="https://cdn.babylonjs.com/babylon.js"></script>
+  <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
 
-    <script>
-        // === Setup Engine & Scene ===
-        const canvas = document.getElementById("renderCanvas");
-        const engine = new BABYLON.Engine(canvas, true);
-        const scene = new BABYLON.Scene(engine);
+  <script>
+    const canvas = document.getElementById("renderCanvas");
+    const engine = new BABYLON.Engine(canvas, true);
+    const scene = new BABYLON.Scene(engine);
 
-        // === Kamera FPS ===
-        const camera = new BABYLON.UniversalCamera("camera", new BABYLON.Vector3(0, 2, -10), scene);
-        camera.attachControl(canvas, true);
-        camera.speed = 0.5; // kecepatan WASD
-        camera.angularSensibility = 500; // sensitivitas mouse
+    // === Cahaya ===
+    const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
 
-        // === Cahaya ===
-        const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
+    // === Kamera FPS ===
+    const camera = new BABYLON.UniversalCamera("camera", new BABYLON.Vector3(0, 2, -10), scene);
+    camera.attachControl(canvas, true);
+    camera.speed = 0.5;
+    camera.angularSensibility = 500;
 
-        // === Lantai ===
-        const ground = BABYLON.MeshBuilder.CreateGround("ground", {width:100, height:100}, scene);
-        ground.material = new BABYLON.StandardMaterial("groundMat", scene);
-        ground.material.diffuseColor = new BABYLON.Color3(0.5,0.5,0.5);
+    // Aktifkan collision & gravity
+    scene.collisionsEnabled = true;
+    camera.checkCollisions = true;
+    camera.applyGravity = true;
+    scene.gravity = new BABYLON.Vector3(0, -0.5, 0);
 
-        // === Fungsi Dinding Batu ===
-        function addWall(x,z,w,h){
-            const wall = BABYLON.MeshBuilder.CreateBox("wall", {width:w, height:h, depth:1}, scene);
-            wall.position = new BABYLON.Vector3(x, h/2, z);
-            wall.material = new BABYLON.StandardMaterial("wallMat", scene);
-            wall.material.diffuseColor = new BABYLON.Color3(0.2,0.2,0.2);
-        }
+    // === Lantai dengan collision ===
+    const ground = BABYLON.MeshBuilder.CreateGround("ground", {width:100, height:100}, scene);
+    ground.checkCollisions = true;
+    const groundMat = new BABYLON.StandardMaterial("groundMat", scene);
+    groundMat.diffuseColor = new BABYLON.Color3(0.5,0.5,0.5);
+    ground.material = groundMat;
 
-        // Tambahkan dinding sesuai denah
-        addWall(0,-20,40,5);
-        addWall(-20,-10,1,5);
-        addWall(20,-10,1,5);
-        addWall(0,0,40,5);
+    // === Tekstur batu untuk dinding ===
+    const wallMat = new BABYLON.StandardMaterial("wallMat", scene);
+    wallMat.diffuseTexture = new BABYLON.Texture("https://assets.babylonjs.com/environments/stone.jpg", scene);
 
-        // === Fungsi Pohon ===
-        function addTree(x,z){
-            // batang
-            const trunk = BABYLON.MeshBuilder.CreateCylinder("trunk", {diameter:1, height:3}, scene);
-            trunk.position = new BABYLON.Vector3(x,1.5,z);
-            trunk.material = new BABYLON.StandardMaterial("trunkMat", scene);
-            trunk.material.diffuseColor = new BABYLON.Color3(0.55,0.27,0.07);
+    // === Fungsi Dinding Batu ===
+    function addWall(x,z,w,h){
+      const wall = BABYLON.MeshBuilder.CreateBox("wall", {width:w, height:h, depth:1}, scene);
+      wall.position = new BABYLON.Vector3(x, h/2, z);
+      wall.material = wallMat;
+      wall.checkCollisions = true; // dinding padat
+    }
 
-            // daun
-            const leaves = BABYLON.MeshBuilder.CreateSphere("leaves", {diameter:3}, scene);
-            leaves.position = new BABYLON.Vector3(x,4,z);
-            leaves.material = new BABYLON.StandardMaterial("leafMat", scene);
-            leaves.material.diffuseColor = new BABYLON.Color3(0,1,0);
-        }
+    // Tambahkan dinding sesuai denah
+    addWall(0,-20,40,5);
+    addWall(-20,-10,1,5);
+    addWall(20,-10,1,5);
+    addWall(0,0,40,5);
 
-        // Pohon sesuai titik hijau
-        addTree(-10,-10);
-        addTree(10,-10);
+    // === Pohon ===
+    function addTree(x,z){
+      const trunk = BABYLON.MeshBuilder.CreateCylinder("trunk", {diameter:1, height:3}, scene);
+      trunk.position = new BABYLON.Vector3(x,1.5,z);
+      trunk.material = new BABYLON.StandardMaterial("trunkMat", scene);
+      trunk.material.diffuseColor = new BABYLON.Color3(0.55,0.27,0.07);
+      trunk.checkCollisions = true;
 
-        // === Render Loop ===
-        engine.runRenderLoop(() => {
-            scene.render();
-        });
+      const leaves = BABYLON.MeshBuilder.CreateSphere("leaves", {diameter:3}, scene);
+      leaves.position = new BABYLON.Vector3(x,4,z);
+      leaves.material = new BABYLON.StandardMaterial("leafMat", scene);
+      leaves.material.diffuseColor = new BABYLON.Color3(0,1,0);
+      leaves.checkCollisions = true;
+    }
 
-        window.addEventListener("resize", () => {
-            engine.resize();
-        });
-    </script>
+    addTree(-10,-10);
+    addTree(10,-10);
+
+    // === Render Loop ===
+    engine.runRenderLoop(() => {
+      scene.render();
+    });
+
+    window.addEventListener("resize", () => {
+      engine.resize();
+    });
+  </script>
 </body>
 </html>
