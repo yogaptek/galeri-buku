@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>SkeS</title>
+  <title>Sketsa 3D FPS</title>
   <style>
     body { margin: 0; overflow: hidden; }
     canvas { display: block; }
@@ -27,7 +27,7 @@
   floor.rotation.x = -Math.PI/2;
   scene.add(floor);
 
-  // === Fungsi Dinding Batu ===
+  // === Dinding Batu ===
   function addWall(x,y,z,w,h,d){
     const geo = new THREE.BoxGeometry(w,h,d);
     const mat = new THREE.MeshBasicMaterial({color:0x333333});
@@ -35,14 +35,12 @@
     wall.position.set(x,y,z);
     scene.add(wall);
   }
+  addWall(0,2.5,-20,40,5,1);
+  addWall(-20,2.5,-10,1,5,20);
+  addWall(20,2.5,-10,1,5,20);
+  addWall(0,2.5,0,40,5,1);
 
-  // Contoh dinding sesuai sketsa (bisa ditambah lagi)
-  addWall(0,2.5,-20,40,5,1);   // dinding horizontal belakang
-  addWall(-20,2.5,-10,1,5,20); // dinding vertikal kiri
-  addWall(20,2.5,-10,1,5,20);  // dinding vertikal kanan
-  addWall(0,2.5,0,40,5,1);     // dinding horizontal depan
-
-  // === Fungsi Pohon ===
+  // === Pohon ===
   function addTree(x,z){
     const trunkGeo = new THREE.CylinderGeometry(0.5,0.5,2,8);
     const trunkMat = new THREE.MeshBasicMaterial({color:0x8B4513});
@@ -56,8 +54,6 @@
     leaf.position.set(x,3,z);
     scene.add(leaf);
   }
-
-  // Pohon sesuai titik hijau di sketsa
   addTree(-10,-10);
   addTree(10,-10);
 
