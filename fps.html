@@ -1,47 +1,21 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Sketsa 3D FPS</title>
-  <style>
-    body { margin: 0; overflow: hidden; }
-    canvas { display: block; }
-  </style>
-</head>
-<body>
 <script type="module">
   import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.module.js';
   import { PointerLockControls } from 'https://cdn.jsdelivr.net/npm/three@0.150.1/examples/jsm/controls/PointerLockControls.js';
 
-  // === Setup Scene, Camera, Renderer ===
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
   const renderer = new THREE.WebGLRenderer();
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(renderer.domElement);
 
-  // === Lantai ===
+  // Lantai
   const floorGeo = new THREE.PlaneGeometry(100,100);
   const floorMat = new THREE.MeshBasicMaterial({color:0x888888});
   const floor = new THREE.Mesh(floorGeo,floorMat);
   floor.rotation.x = -Math.PI/2;
   scene.add(floor);
 
-  // === Fungsi Dinding Batu ===
-  function addWall(x,y,z,w,h,d){
-    const geo = new THREE.BoxGeometry(w,h,d);
-    const mat = new THREE.MeshBasicMaterial({color:0x333333});
-    const wall = new THREE.Mesh(geo,mat);
-    wall.position.set(x,y,z);
-    scene.add(wall);
-  }
-  // Contoh dinding sesuai sketsa
-  addWall(0,2.5,-20,40,5,1);
-  addWall(-20,2.5,-10,1,5,20);
-  addWall(20,2.5,-10,1,5,20);
-  addWall(0,2.5,0,40,5,1);
-
-  // === Fungsi Pohon ===
+  // Pohon
   function addTree(x,z){
     const trunkGeo = new THREE.CylinderGeometry(0.5,0.5,2,8);
     const trunkMat = new THREE.MeshBasicMaterial({color:0x8B4513});
@@ -58,12 +32,22 @@
   addTree(-10,-10);
   addTree(10,-10);
 
-  // === Kamera & Kontrol FPS ===
+  // Dinding
+  function addWall(x,y,z,w,h,d){
+    const geo = new THREE.BoxGeometry(w,h,d);
+    const mat = new THREE.MeshBasicMaterial({color:0x333333});
+    const wall = new THREE.Mesh(geo,mat);
+    wall.position.set(x,y,z);
+    scene.add(wall);
+  }
+  addWall(0,2.5,-20,40,5,1);
+
+  // Kamera & Kontrol
   const controls = new PointerLockControls(camera, document.body);
   document.body.addEventListener('click', () => controls.lock());
   camera.position.set(0,1.6,10);
 
-  // === Gerakan WASD ===
+  // WASD
   const keys={};
   document.addEventListener('keydown',e=>keys[e.code]=true);
   document.addEventListener('keyup',e=>keys[e.code]=false);
@@ -75,7 +59,7 @@
     if(keys['KeyD'])controls.moveRight(speed);
   }
 
-  // === Animasi ===
+  // Animasi
   function animate(){
     requestAnimationFrame(animate);
     movePlayer();
@@ -83,5 +67,3 @@
   }
   animate();
 </script>
-</body>
-</html>
