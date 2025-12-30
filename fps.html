@@ -1,68 +1,324 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>A-Frame JSON Loader</title>
-  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/gh/n5ro/aframe-physics-system@v4.0.1/dist/aframe-physics-system.min.js"></script>
+  <meta charset="UTF-8" />
+  <title>3D Floor Plan Editor – Three.js</title>
+  <style>
+    body { margin: 0; overflow: hidden; font-family: system-ui, Arial, sans-serif; }
+    canvas { display: block; }
+    #ui {
+      position: absolute; top: 10px; left: 10px;
+      background: rgba(255,255,255,0.95); padding: 10px; border-radius: 8px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.15); z-index: 10; min-width: 260px;
+    }
+    #ui h3 { margin: 0 0 8px; font-size: 14px; }
+    #ui .row { display: flex; gap: 8px; margin: 6px 0; flex-wrap: wrap; }
+    #ui button, #ui label { font-size: 13px; }
+    #ui button { padding: 6px 10px; border-radius: 6px; border: 1px solid #ddd; background: #f7f7f7; cursor: pointer; }
+    #ui button:hover { background: #eee; }
+    #output {
+      margin-top: 8px; max-height: 220px; overflow: auto; font-size: 12px;
+      background: #f3f6fa; border: 1px dashed #cbd5e1; padding: 8px; border-radius: 6px;
+    }
+    #help {
+      position: absolute; bottom: 10px; left: 10px; right: 10px;
+      background: rgba(0,0,0,0.55); color: #fff; padding: 8px 10px; border-radius: 8px;
+      font-size: 12px; line-height: 1.5;
+    }
+    #help kbd {
+      background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 4px; margin-right: 4px;
+      border: 1px solid rgba(255,255,255,0.3);
+    }
+  </style>
 </head>
 <body>
-  <a-scene physics="gravity: -9.8">
-    <a-sky color="#88c9ff"></a-sky>
-    <a-plane rotation="-90 0 0" width="1000" height="1000" color="#9E9E9E" static-body></a-plane>
+  <div id="ui">
+    <h3>Floor editor</h3>
+    <div class="row">
+      <button onclick="toggleSnap()">Toggle snap: <span id="snapState">ON</span></button>
+      <button onclick="clearWalls()">Clear walls</button>
+      <button onclick="exportWalls()">Export JSON</button>
+    </div>
+    <div class="row">
+      <label><input type="checkbox" id="shadows" checked onchange="toggleShadows()"> Shadows</label>
+      <label><input type="checkbox" id="gridVisible" checked onchange="toggleGrid()"> Grid</label>
+    </div>
+    <pre id="output"></pre>
+  </div>
 
-    <!-- Kamera FPS -->
-    <a-entity camera wasd-controls look-controls="pointerLockEnabled: true"
-              position="0 1.6 50"
-              dynamic-body="shape: sphere; sphereRadius: 0.35; mass: 5">
-    </a-entity>
-  </a-scene>
+  <div id="help">
+    <div>
+      <strong>Mouse:</strong>
+      <kbd>Click</kbd> add wall • <kbd>Drag</kbd> move wall • Orbit camera: <kbd>Right‑drag</kbd>/<kbd>Scroll</kbd>
+    </div>
+    <div>
+      <strong>Wall edit:</strong>
+      <kbd>Q</kbd>/<kbd>E</kbd> rotate • <kbd>↑</kbd>/<kbd>↓</kbd> length ± • <kbd>PgUp</kbd>/<kbd>PgDn</kbd> height ± •
+      <kbd>[</kbd>/<kbd>]</kbd> thickness ± • <kbd>Delete</kbd> remove
+    </div>
+    <div>
+      <strong>Snap:</strong> <kbd>T</kbd> toggle grid snap • default snap = 0.5 units
+    </div>
+  </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/three@0.155.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.155.0/examples/js/controls/OrbitControls.js"></script>
   <script>
-    // Contoh JSON (bisa di-load dari file eksternal)
-    const data = {
-      "levels": [
-        {
-          "objects": [
-            { "type": "wall", "xStart": 0, "yStart": 0, "xEnd": 500, "yEnd": 0, "height": 250, "thickness": 20 },
-            { "type": "wall", "xStart": 500, "yStart": 0, "xEnd": 500, "yEnd": 400, "height": 250, "thickness": 20 },
-            { "type": "furniture", "name": "Table", "x": 200, "y": 150, "width": 120, "depth": 80, "height": 75 }
-          ]
+    let scene, camera, renderer, controls;
+    let raycaster = new THREE.Raycaster();
+    let mouse = new THREE.Vector2();
+    let walls = [];
+    let selectedWall = null;
+    let dragOffset = new THREE.Vector3();
+    let ground;
+    let grid;
+    let snapEnabled = true;
+    const SNAP = 0.5;
+
+    const BASE = { w: 5, h: 2.5, d: 0.5 }; // base dimensions for wall geometry
+
+    init();
+    animate();
+
+    function init() {
+      // Scene + Renderer
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0xe9eef5);
+
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.shadowMap.enabled = true;
+      document.body.appendChild(renderer.domElement);
+
+      // Camera + Controls
+      camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 2000);
+      camera.position.set(20, 25, 28);
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.target.set(0, 0, 0);
+
+      // Lights
+      const ambient = new THREE.AmbientLight(0xffffff, 0.35);
+      scene.add(ambient);
+
+      const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
+      dirLight.position.set(-20, 40, -20);
+      dirLight.castShadow = true;
+      dirLight.shadow.mapSize.set(1024, 1024);
+      dirLight.shadow.camera.near = 1;
+      dirLight.shadow.camera.far = 200;
+      dirLight.shadow.camera.left = -60;
+      dirLight.shadow.camera.right = 60;
+      dirLight.shadow.camera.top = 60;
+      dirLight.shadow.camera.bottom = -60;
+      scene.add(dirLight);
+
+      // Ground (for raycasting & shadow receive)
+      const groundMat = new THREE.MeshStandardMaterial({ color: 0xb0bec5, metalness: 0, roughness: 1 });
+      ground = new THREE.Mesh(new THREE.PlaneGeometry(1000, 1000), groundMat);
+      ground.rotation.x = -Math.PI / 2;
+      ground.receiveShadow = true;
+      ground.name = 'ground';
+      scene.add(ground);
+
+      // Grid helper
+      grid = new THREE.GridHelper(100, 100, 0x78909c, 0xb0bec5);
+      grid.position.y = 0.001; // slight offset to avoid z-fighting
+      scene.add(grid);
+
+      // Events
+      window.addEventListener('resize', onWindowResize);
+      renderer.domElement.addEventListener('pointerdown', onPointerDown);
+      renderer.domElement.addEventListener('pointerup', () => (selectedWall = null));
+      renderer.domElement.addEventListener('pointermove', onPointerMove);
+      window.addEventListener('keydown', onKeyDown);
+    }
+
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    function worldFromMouse(event) {
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+      raycaster.setFromCamera(mouse, camera);
+      const hit = raycaster.intersectObject(ground);
+      if (hit.length > 0) {
+        const p = hit[0].point;
+        if (snapEnabled) {
+          p.x = snap(p.x, SNAP);
+          p.z = snap(p.z, SNAP);
         }
-      ]
-    };
-
-    const scene = document.querySelector('a-scene');
-
-    data.levels[0].objects.forEach(obj => {
-      if (obj.type === "wall") {
-        const wall = document.createElement("a-box");
-        const midX = (obj.xStart + obj.xEnd) / 2;
-        const midZ = (obj.yStart + obj.yEnd) / 2;
-        const length = Math.hypot(obj.xEnd - obj.xStart, obj.yEnd - obj.yStart);
-        const angle = Math.atan2(obj.yEnd - obj.yStart, obj.xEnd - obj.xStart) * 180 / Math.PI;
-
-        wall.setAttribute("position", `${midX} ${obj.height/2} ${midZ}`);
-        wall.setAttribute("width", length);
-        wall.setAttribute("height", obj.height);
-        wall.setAttribute("depth", obj.thickness);
-        wall.setAttribute("rotation", `0 ${-angle} 0`);
-        wall.setAttribute("color", "#808080");
-        wall.setAttribute("static-body", "");
-        scene.appendChild(wall);
+        return p;
       }
+      return null;
+    }
 
-      if (obj.type === "furniture") {
-        const furn = document.createElement("a-box");
-        furn.setAttribute("position", `${obj.x} ${obj.height/2} ${obj.y}`);
-        furn.setAttribute("width", obj.width);
-        furn.setAttribute("height", obj.height);
-        furn.setAttribute("depth", obj.depth);
-        furn.setAttribute("color", "#a0522d");
-        furn.setAttribute("static-body", "");
-        scene.appendChild(furn);
+    function snap(val, step) {
+      return Math.round(val / step) * step;
+    }
+
+    function onPointerDown(event) {
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+      raycaster.setFromCamera(mouse, camera);
+
+      const intersects = raycaster.intersectObjects(walls, true);
+      if (intersects.length > 0) {
+        selectedWall = intersects[0].object;
+        // if clicked on a child (e.g., edges later), find top mesh
+        if (!selectedWall.geometry || !(selectedWall.geometry instanceof THREE.BoxGeometry)) {
+          selectedWall = selectedWall.parent || selectedWall;
+        }
+        const p = worldFromMouse(event);
+        if (p) dragOffset.copy(p).sub(selectedWall.position);
+        highlight(selectedWall, true);
+      } else {
+        const p = worldFromMouse(event);
+        if (p) {
+          const wall = createWall(p.x, p.z);
+          scene.add(wall);
+          walls.push(wall);
+          selectOnly(wall);
+        }
       }
-    });
+    }
+
+    function onPointerMove(event) {
+      if (!selectedWall) return;
+      const p = worldFromMouse(event);
+      if (!p) return;
+      const newPos = p.clone().sub(dragOffset);
+      if (snapEnabled) {
+        newPos.x = snap(newPos.x, SNAP);
+        newPos.z = snap(newPos.z, SNAP);
+      }
+      selectedWall.position.set(newPos.x, selectedWall.position.y, newPos.z);
+    }
+
+    function onKeyDown(event) {
+      if (!selectedWall) {
+        if (event.key.toLowerCase() === 't') toggleSnap();
+        return;
+      }
+      const stepLen = 0.25;
+      const stepThk = 0.05;
+      const stepRot = THREE.MathUtils.degToRad(15);
+      const stepHgt = 0.25;
+
+      switch (event.key) {
+        case 'Delete':
+          scene.remove(selectedWall);
+          walls = walls.filter(w => w !== selectedWall);
+          selectedWall = null;
+          break;
+        case 'ArrowUp': // length +
+          selectedWall.scale.x = Math.max(0.1, selectedWall.scale.x + stepLen / BASE.w);
+          break;
+        case 'ArrowDown': // length -
+          selectedWall.scale.x = Math.max(0.1, selectedWall.scale.x - stepLen / BASE.w);
+          break;
+        case '[': // thickness -
+          selectedWall.scale.z = Math.max(0.1, selectedWall.scale.z - stepThk / BASE.d);
+          break;
+        case ']': // thickness +
+          selectedWall.scale.z = Math.max(0.1, selectedWall.scale.z + stepThk / BASE.d);
+          break;
+        case 'PageUp': // height +
+          selectedWall.scale.y = Math.max(0.1, selectedWall.scale.y + stepHgt / BASE.h);
+          selectedWall.position.y = (BASE.h * selectedWall.scale.y) / 2;
+          break;
+        case 'PageDown': // height -
+          selectedWall.scale.y = Math.max(0.1, selectedWall.scale.y - stepHgt / BASE.h);
+          selectedWall.position.y = (BASE.h * selectedWall.scale.y) / 2;
+          break;
+        case 'q':
+        case 'Q':
+          selectedWall.rotation.y -= stepRot;
+          break;
+        case 'e':
+        case 'E':
+          selectedWall.rotation.y += stepRot;
+          break;
+        case 't':
+        case 'T':
+          toggleSnap();
+          break;
+      }
+    }
+
+    function createWall(x, z) {
+      const geom = new THREE.BoxGeometry(BASE.w, BASE.h, BASE.d);
+      const mat = new THREE.MeshStandardMaterial({ color: 0x808080, metalness: 0, roughness: 1 });
+      const wall = new THREE.Mesh(geom, mat);
+      wall.position.set(x, BASE.h / 2, z);
+      wall.castShadow = true;
+      wall.receiveShadow = true;
+      wall.name = 'wall';
+      return wall;
+    }
+
+    function selectOnly(mesh) {
+      walls.forEach(w => highlight(w, false));
+      selectedWall = mesh;
+      highlight(mesh, true);
+    }
+
+    function highlight(mesh, on) {
+      if (!mesh || !mesh.material) return;
+      mesh.material.emissive = mesh.material.emissive || new THREE.Color(0x000000);
+      mesh.material.emissive.set(on ? 0x223344 : 0x000000);
+      mesh.material.emissiveIntensity = on ? 0.35 : 0.0;
+    }
+
+    function toggleSnap() {
+      snapEnabled = !snapEnabled;
+      document.getElementById('snapState').textContent = snapEnabled ? 'ON' : 'OFF';
+    }
+
+    function toggleShadows() {
+      const enabled = document.getElementById('shadows').checked;
+      renderer.shadowMap.enabled = enabled;
+      scene.traverse(obj => {
+        if (obj.isMesh) {
+          obj.castShadow = enabled && obj.name === 'wall';
+          obj.receiveShadow = enabled && (obj.name === 'wall' || obj.name === 'ground');
+        }
+      });
+    }
+
+    function toggleGrid() {
+      const visible = document.getElementById('gridVisible').checked;
+      grid.visible = visible;
+    }
+
+    function clearWalls() {
+      walls.forEach(w => scene.remove(w));
+      walls = [];
+      selectedWall = null;
+      document.getElementById('output').textContent = '';
+    }
+
+    function exportWalls() {
+      const data = walls.map(w => ({
+        x: round(w.position.x), y: round(w.position.y), z: round(w.position.z),
+        width: round(BASE.w * w.scale.x),
+        height: round(BASE.h * w.scale.y),
+        depth: round(BASE.d * w.scale.z),
+        rotationYDeg: round(THREE.MathUtils.radToDeg(w.rotation.y))
+      }));
+      document.getElementById('output').textContent = JSON.stringify(data, null, 2);
+    }
+
+    function round(n) { return Math.round(n * 1000) / 1000; }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
   </script>
 </body>
 </html>
