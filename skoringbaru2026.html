@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Kontrol Skor & Sheet</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+      background-color: #f0f2f5;
+      font-family: Arial, sans-serif;
+    }
+    .kontrol-layer {
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+    .kontrol-panel {
+      background-color: white;
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.2);
+      padding: 30px;
+      width: 100%;
+      max-width: 600px;
+    }
+    .btn-skoring {
+      font-size: 1rem;
+      padding: 12px;
+      margin-bottom: 10px;
+      width: 100%;
+      border-radius: 8px;
+      font-weight: bold;
+    }
+    .status-box {
+      background-color: #e9ecef;
+      padding: 15px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+    }
+    .timer-container {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px dashed #ccc;
+    }
+    #timerDisplay {
+      font-size: 1.8rem;
+      font-weight: bold;
+      color: #212529;
+      margin-bottom: 8px;
+    }
+    .timer-warning {
+      color: #dc3545 !important;
+      animation: blink 1s linear infinite;
+    }
+    @keyframes blink {
+      50% { opacity: 0.4; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="kontrol-layer">
+    <div class="kontrol-panel">
+      <h2 class="text-center mb-2">Kirim Skor ke Layar</h2>
+      
+      <div class="status-box text-center mb-4">
+        <span class="fw-bold text-secondary">Mahasiswa Aktif (Diingat Remote):</span><br>
+        <span id="activeStudent" class="fw-bold text-primary">Belum Ada</span> 
+        <span id="activeCategory" class="text-muted d-block" style="font-size: 0.85rem;">(Belum memilih kategori)</span>
+        
+        <div class="row g-2 mt-2">
+          <div class="col-6">
+            <button class="btn btn-warning btn-sm fw-bold w-100 text-dark" onclick="reactivateSession()">Aktifkan Kembali 🔄</button>
+          </div>
+          <div class="col-6">
+            <button class="btn btn-primary btn-sm fw-bold w-100" onclick="triggerNextStudent()">Next Student ➡️</button>
+          </div>
+        </div>
+
+        <div class="timer-container">
+          <div id="timerDisplay">03:00</div>
+          <button id="timerBtn" class="btn btn-outline-dark btn-sm fw-bold px-3" onclick="toggleTimer()">Start Timer</button>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-6">
+          <button class="btn btn-danger btn-skoring" onclick="sendSkor(10)">Skor 10</button>
+          <button class="btn btn-danger btn-skoring" onclick="sendSkor(20)">Skor 20</button>
+          <button class="btn btn-danger btn-skoring" onclick="sendSkor(30)">Skor 30</button>
+          <button class="btn btn-danger btn-skoring" onclick="sendSkor(40)">Skor 40</button>
+          <button class="btn btn-warning btn-skoring text-dark" onclick="sendSkor(50)">Skor 50</button>
+          <button class="btn btn-warning btn-skoring text-dark" onclick="sendSkor(60)">Skor 60</button>
+        </div>
+        <div class="col-6">
+          <button class="btn btn-info btn-skoring" onclick="sendSkor(70)">Skor 70</button>
+          <button class="btn btn-success btn-skoring" onclick="sendSkor(80)">Skor 80</button>
+          <button class="btn btn-success btn-skoring" onclick="sendSkor(90)">Skor 90</button>
+          <button class="btn btn-success btn-skoring" onclick="sendSkor(100)">Skor 100</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+  <script>
+    var firebaseConfig = {
+      apiKey: "AIzaSyBiS9DczFWbLjb4wX-gnoTRd47qSwM4Z_I",
+      authDomain: "assignment-60132.firebaseapp.com",
+      databaseURL: "https://assignment-60132-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "assignment-60132",
+      storageBucket: "assignment-60132.appspot.com",
+      messagingSenderId: "469676760673",
+      appId: "1:469676760673:web:f95637fe7beb92740f5420"
+    };
+    firebase.initializeApp(firebaseConfig);
+
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxRCD_qBC0DFfNRmgf9OIV3SBSr7o_jIhtIrqYoqnvEjCrp4w7CTdFlYsMIcZW4FRk7IA/exec";
+    
+    let currentMahasiswa = "ANONYMOUS";
+    let currentKategori = "Belum memilih";
+
+    let countdownInterval = null;
+    const totalTimeInSeconds = 3 * 60;
+    let timeRemaining = totalTimeInSeconds;
+    let isTimerRunning = false;
+
+    firebase.database().ref('active_session').on('value', function(snapshot) {
+      const val = snapshot.val();
+      if (val) {
+        // Remote tetap mengingat nama asli selama statusnya bukan reset total
+        if (val.mahasiswa && val.mahasiswa !== "ANONYMOUS") {
+          currentMahasiswa = val.mahasiswa;
+          currentKategori = val.kategori || "Belum memilih";
+        }
+
+        if (val.status === 'reset') {
+          currentMahasiswa = "ANONYMOUS";
+          currentKategori = "Belum memilih";
+          document.getElementById("activeStudent").textContent = "Belum Ada";
+          document.getElementById("activeCategory").textContent = "(Belum memilih kategori)";
+        } else if (val.status === 'timeout_clear') {
+          document.getElementById("activeStudent").textContent = currentMahasiswa + " (Waktu Habis)";
+          document.getElementById("activeCategory").textContent = `Kategori: ${currentKategori}`;
+        } else {
+          document.getElementById("activeStudent").textContent = currentMahasiswa;
+          document.getElementById("activeCategory").textContent = `Kategori: ${currentKategori}`;
+        }
+      }
+    });
+
+    // Fungsi untuk mengaktifkan kembali sesi yang sempat kosong karena timeout
+    function reactivateSession() {
+      if (currentMahasiswa !== "ANONYMOUS") {
+        firebase.database().ref('active_session').set({
+          mahasiswa: currentMahasiswa,
+          kategori: currentKategori,
+          status: "active" // Kembalikan ke status aktif agar layar proyektor memunculkan namanya lagi
+        }).then(() => {
+          console.log("🔄 Sesi berhasil diaktifkan kembali ke layar utama.");
+        }).catch(err => console.error("Gagal mengaktifkan kembali sesi:", err));
+      } else {
+        alert("Tidak ada data mahasiswa terakhir yang direkam untuk diaktifkan.");
+      }
+    }
+
+    function triggerNextStudent() {
+      firebase.database().ref('active_session').set({
+        mahasiswa: "ANONYMOUS",
+        kategori: "Belum memilih",
+        status: "reset"
+      }).then(() => {
+        console.log("➡️ Perintah Next Student dikirim.");
+        if (isTimerRunning) toggleTimer(); 
+      }).catch(err => console.error("Gagal mengirim perintah next:", err));
+    }
+
+    function toggleTimer() {
+      const timerBtn = document.getElementById("timerBtn");
+      const timerDisplay = document.getElementById("timerDisplay");
+
+      if (isTimerRunning) {
+        clearInterval(countdownInterval);
+        timeRemaining = totalTimeInSeconds;
+        timerDisplay.textContent = "03:00";
+        timerDisplay.classList.remove("timer-warning");
+        timerBtn.textContent = "Start Timer";
+        timerBtn.className = "btn btn-outline-dark btn-sm fw-bold px-3";
+        isTimerRunning = false;
+      } else {
+        isTimerRunning = true;
+        timerBtn.textContent = "Reset Timer";
+        timerBtn.className = "btn btn-dark btn-sm fw-bold px-3";
+        
+        countdownInterval = setInterval(() => {
+          timeRemaining--;
+          let minutes = Math.floor(timeRemaining / 60);
+          let seconds = timeRemaining % 60;
+          minutes = minutes < 10 ? "0" + minutes : minutes;
+          seconds = seconds < 10 ? "0" + seconds : seconds;
+          timerDisplay.textContent = `${minutes}:${seconds}`;
+          
+          if (timeRemaining <= 30) {
+            timerDisplay.classList.add("timer-warning");
+          }
+          
+          if (timeRemaining <= 0) {
+            clearInterval(countdownInterval);
+            timerDisplay.textContent = "00:00";
+            timerBtn.textContent = "Start Timer";
+            timerBtn.className = "btn btn-outline-dark btn-sm fw-bold px-3";
+            isTimerRunning = false;
+            timeRemaining = totalTimeInSeconds;
+            
+            // Waktu habis: Kosongkan layar utama, tapi remote tetap ingat namanya.
+            firebase.database().ref('active_session').update({
+              status: "timeout_clear"
+            });
+          }
+        }, 1000);
+      }
+    }
+
+    function sendSkor(skor) {
+      const triggerData = {
+        skor: skor,
+        label: skor.toString()
+      };
+
+      firebase.database().ref('trigger').set(triggerData)
+        .then(() => console.log(`✅ Skor ${skor} dikirim ke layar`))
+        .catch(err => console.error('❌ Gagal kirim trigger:', err));
+
+      fetch(SCRIPT_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          mahasiswa: currentMahasiswa,
+          kategori: currentKategori,
+          skor: skor 
+        })
+      })
+      .then(() => console.log(`✅ Skor ${skor} tercatat untuk ${currentMahasiswa}`))
+      .catch(error => console.error("❌ Gagal mencatat skor ke Sheets:", error));
+      
+      // Tombol skor TIDAK mereset apa pun sekarang sesuai instruksi baru Anda.
+    }
+  </script>
+</body>
+</html>
