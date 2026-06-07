@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>American Literature Display</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+      background-color: white;
+      font-family: Arial, sans-serif;
+      overflow: hidden;
+    }
+
+    #starter {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: black;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2em;
+      z-index: 99999;
+      cursor: pointer;
+    }
+
+    #layoutWrapper {
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      align-items: flex-start;
+      gap: 40px;
+      padding: 40px;
+      height: 100vh;
+      box-sizing: border-box;
+    }
+
+    #leftColumn {
+      width: 40%;
+      max-width: 500px;
+      background-color: #f8f9fa;
+      color: #212529;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .search-container {
+      position: relative;
+      margin-bottom: 15px;
+    }
+    
+    .autocomplete-suggestions {
+      position: absolute;
+      border: 1px solid #ced4da;
+      border-top: none;
+      z-index: 99;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background-color: #fff;
+      max-height: 200px;
+      overflow-y: auto;
+      border-radius: 0 0 8px 8px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .autocomplete-suggestion {
+      padding: 10px;
+      cursor: pointer;
+    }
+
+    .autocomplete-suggestion:hover {
+      background-color: #e9ecef;
+    }
+
+    #statusKategori {
+      display: none;
+      padding: 12px;
+      border-radius: 8px;
+      font-weight: bold;
+      text-align: center;
+      margin-bottom: 20px;
+      transition: all 0.3s ease;
+      font-size: 1.05em;
+    }
+
+    .status-belum-pilih {
+      background-color: #fff5f5;
+      color: #e63946;
+      border: 2px dashed #e63946;
+      animation: kedapKedipMerah 1.2s infinite ease-in-out;
+    }
+
+    .status-sudah-pilih {
+      background-color: #cff4fc;
+      color: #055160;
+      border: 2px solid #b6effb;
+    }
+
+    @keyframes kedapKedipMerah {
+      0% { opacity: 0.3; transform: scale(0.98); }
+      50% { opacity: 1; transform: scale(1); }
+      100% { opacity: 0.3; transform: scale(0.98); }
+    }
+
+    #rightColumnWrapper {
+      width: 55%;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      height: calc(100vh - 80px);
+    }
+
+    #rightColumn {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      gap: 20px;
+      flex-grow: 1;
+    }
+
+    /* GAYA TEXT BRANDING */
+    .branding-text {
+      text-align: center;
+      margin-top: 20px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      color: #2b2d42;
+      text-transform: uppercase;
+    }
+
+    .branding-title {
+      font-size: 1.7em;
+      margin: 0;
+      opacity: 0.85;
+    }
+
+    .branding-sub {
+      font-size: 1.1em;
+      font-weight: 600;
+      color: #6c757d;
+      margin-top: 4px;
+      text-transform: none; 
+      letter-spacing: 1px;
+    }
+
+    /* GAYA BARU: Teks URL Link di bawah nama */
+    .branding-link {
+      font-size: 0.85em;
+      font-weight: 500;
+      color: #8d99ae;
+      margin-top: 6px;
+      text-transform: none;
+      letter-spacing: 1px;
+    }
+
+    .category {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2em;
+      font-weight: bold;
+      padding: 20px;
+      border-radius: 12px;
+      color: #fff;
+      text-align: center;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      cursor: pointer;
+      transition: transform 0.1s ease, opacity 0.1s ease;
+    }
+
+    .category.disabled-click {
+      cursor: not-allowed;
+      opacity: 0.5;
+      filter: grayscale(30%);
+    }
+
+    .category:not(.disabled-click):active {
+      transform: scale(0.95);
+      opacity: 0.6;
+    }
+
+    @keyframes melayang {
+      0% { transform: translateY(0px) translateX(0px); }
+      50% { transform: translateY(-12px) translateX(6px); }
+      100% { transform: translateY(0px) translateX(0px); }
+    }
+
+    .floating-category {
+      animation-name: melayang;
+      animation-iteration-count: infinite;
+      animation-timing-function: ease-in-out;
+    }
+
+    #skorDisplay {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 80vh;
+      font-weight: bold;
+      visibility: hidden;
+      z-index: 100;
+      -webkit-text-stroke: 4px orange;
+      color: white;
+      pointer-events: none;
+    }
+
+    #glowLayer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 99;
+      opacity: 0;
+      background: radial-gradient(circle at center, rgba(255,255,255,0.6) 0%, transparent 70%);
+      animation: glowBurst 1s ease-out forwards;
+    }
+
+    @keyframes glowBurst {
+      0% {
+        opacity: 0.8;
+        transform: scale(0.5);
+        filter: blur(20px);
+        background: radial-gradient(circle at center, red, orange, yellow, green, cyan, blue, violet);
+      }
+      100% {
+        opacity: 0;
+        transform: scale(2);
+        filter: blur(60px);
+      }
+    }
+
+    .shake {
+      animation: shake 0.6s ease-in-out;
+    }
+
+    @keyframes shake {
+      0% { transform: translate(0, 0); }
+      20% { transform: translate(-5px, 0); }
+      40% { transform: translate(5px, 0); }
+      60% { transform: translate(-5px, 0); }
+      80% { transform: translate(5px, 0); }
+      100% { transform: translate(0, 0); }
+    }
+
+    #ornamenContainer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 98;
+    }
+
+    .ornamen {
+      position: absolute;
+      font-size: 24px;
+      animation: jatuh 2s linear forwards;
+    }
+
+    @keyframes jatuh {
+      0% { transform: translate(0, 0) rotate(0deg); opacity: 1; }
+      100% { transform: translate(var(--x), 100vh) rotate(var(--r)); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="starter" onclick="unlockAudio()">
+    Start Assessment
+  </div>
+
+  <div id="skorDisplay"></div>
+  <div id="glowLayer"></div>
+  <div id="ornamenContainer"></div>
+
+  <div id="layoutWrapper">
+    <div id="leftColumn">
+      <div class="search-container">
+        <label for="studentInput" class="form-label fw-bold">Select Student Name:</label>
+        <input type="text" id="studentInput" class="form-control" placeholder="Type name here..." autocomplete="off">
+        <div id="suggestions" class="autocomplete-suggestions"></div>
+      </div>
+
+      <div id="statusKategori" class="status-belum-pilih">
+        Please select a category...
+      </div>
+
+      <h4>Instructions</h4>
+      <ol>
+        <li>Our assessment is conducted under strict some rules.</li>
+        <li>Once you click the <strong>Randomize</strong> button, 9 categories will appear on the screen.</li>
+        <li>The button may be used up to five times. Each participant must click the button once.</li>
+        <li>You may select one category and will be asked up to three questions based on your choice.</li>
+        <li>If you feel your responses are not quite satisfying, you may select one additional category — without clicking the button again.</li>
+      </ol>
+      <button id="shuffleBtn" class="btn btn-primary mt-2">Randomize Category</button>
+    </div>
+
+    <div id="rightColumnWrapper">
+      <div id="rightColumn"></div>
+      
+      <div class="branding-text">
+        <h2 class="branding-title">Final Exam: Survey of British Literature</h2>
+        <div class="branding-sub">with Yoga Sudarisman</div>
+        <div class="branding-link">visit: yogaptek.my.id</div>
+      </div>
+    </div>
+  </div>
+
+  <audio id="niceTry" src="https://yogaptek.github.io/suara/nicetry.mp3" preload="auto"></audio>
+  <audio id="notBad" src="https://assets.mixkit.co/sfx/download/mixkit-game-notification-wave-2314.mp3" preload="auto"></audio>
+  <audio id="goodJob" src="https://yogaptek.github.io/suara/goodjob.mp3" preload="auto"></audio>
+  <audio id="applause" src="https://yogaptek.github.io/suara/perfect.mp3" preload="auto"></audio>
+  <audio id="shuffleSound" src="https://yogaptek.github.io/suara/waterdrop.mp3" preload="auto"></audio>
+
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBiS9DczFWbLjb4wX-gnoTRd47qSwM4Z_I",
+      authDomain: "assignment-60132.firebaseapp.com",
+      databaseURL: "https://assignment-60132-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "assignment-60132",
+      storageBucket: "assignment-60132.appspot.com",
+      messagingSenderId: "469676760673",
+      appId: "1:469676760673:web:f95637fe7beb92740f5420"
+    };
+    firebase.initializeApp(firebaseConfig);
+
+    const skorDisplay = document.getElementById("skorDisplay");
+    const glowLayer = document.getElementById("glowLayer");
+    const ornamenContainer = document.getElementById("ornamenContainer");
+    const shuffleBtn = document.getElementById("shuffleBtn");
+    const container = document.getElementById("rightColumn");
+    const studentInput = document.getElementById("studentInput");
+    const suggestionsContainer = document.getElementById("suggestions");
+    const statusKategori = document.getElementById("statusKategori");
+
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxRCD_qBC0DFfNRmgf9OIV3SBSr7o_jIhtIrqYoqnvEjCrp4w7CTdFlYsMIcZW4FRk7IA/exec";
+
+    const students = [
+      "MUHAMMAD IDRIS MAULANA", "SYALWA SAFIRA AZZAHRA", "MUTIARA MEILIA SANI", 
+      "MARSYA AVIANDRA PUTRI", "AMELIA DIANI PUTRI", "SALSA NOVIANTI", 
+      "CIKA NURUL RAMDANIAH", "ZAHIRA ADHWA FAIRUZ", "NADIA YUSTIRA", 
+      "RAHMA RUMAISHA PUTRI", "RASYA KAMILAH AZ-ZAHRA", "EVIRA DWI SHAKIRA", 
+      "SEERIN DENIA PUTRI", "RISA AULIA RAHMA", "ADISTY DHONA RESTU RAMADHANI", 
+      "NAZLA NURNAIMAH BILQIS", "SHIRIN HUMAIRRA SETIAWAN", "ALISYA DWI RAMADHANI", 
+      "NISA AZZAHRA GUNAWAN", "KHALYNA NAZEILA ABIGEL NURJAMAN", "MARSYA LAURA HUMAIRA", 
+      "KAYLA JIHAN ALBIYYA RAHMA", "FARIZKY PASHA LATHIF PRATAMA", "FARIDL AKBAR SAPUTRA", 
+      "ZEEHAN CHOERUNISA", "MUHAMMAD HIBRIZI LAUDZA", "ARSYANI DEWITA WIJAYA", 
+      "NABILLA HADY RAMADHANY", "ALIFAH DZAKIRA", "MEYLIANA SOFIYANTI", 
+      "NIRWASITA ALIM", "RAHMA TSANIA PUTRI", "INTAN OKTARI RAMADHANI", 
+      "MUHAMAD GIBRAN ALFARIQ", "DAFFA FIRJATULLAH", "HARUN YAHYA", 
+      "MUHAMMAD RIZKI NAUFAL PRATAMA", "MUHAMMADI NEJAD JAUZI AL JASIR", "RAYHAN IRHAMNA", 
+      "ANANDA RASYA", "NAUFAL ALI MUSTHOFA", "ZULFAN HAMZAH RUZAIN", "HAYATAKA BILHAQ",
+      "ZAHARA CLARESTA ATHAILLAH", "SYIFA NURKAMILAH", "IRMA SHOKHIBATUSSYIFA", 
+      "DERAISYA AUGIA SUPARTO", "RAIHANA HAURA SYAHIDAH", "NAYA AULIA SYIFA", 
+      "NAJWA RAMADHANI", "ZAHRA IBNATI HASANAH", "NAJWA NUR AULIA RAHMAT", 
+      "DILA FEBIOLA", "DILA ANANDA PRATAMA", "WIDYA SEPTIARINI", 
+      "SALMA RAHMAWATI", "SAYYIDAH MA'WATUL FUADATIL AFIFAH", "RAISA NADA FEBIALOVA", 
+      "SHAFA KAMILA AL HASANI", "SRI KURNIAWATI", "VANIA RAMADHANI SIDIQ", 
+      "MUHAMMAD NAJIB IQBAL ABDULLAH", "AGUNG PRATAMA", "NAYLA SYIFA AZIZAH", 
+      "ISNAENI KHANIFAH", "MUHAMMAD LUTHFI MUBAROK", "AISYAH FAUZIAH MAHARANI", 
+      "MUHAMAD NAZMUL MUTAGIN", "HARYA SHADIQIN", "ARI FATHUR RAMDANI", 
+      "SINTA CELAUDIA", "FAHRI FANAKI RAKHMAN", "SYEQIZAR AJEUNG WIGEUNA", 
+      "ALIFIA DAVINA IBRAHIM", "FARHAN FU'ADI", "MUHAMMAD ILYAS IBRAHIM", 
+      "NADILA DELFIA PUTRI NINGSIH", "ALIFIA NAFIAH MUTHMAINNA", "MUHAMMAD NUR DWI RAMADAN SAPUT", 
+      "AELIA AZURA SAJJAD", "ILMAN KHOIRUL ANWAR", "VINA SITI NURSYAMSIAH", 
+      "QURROTUL AINI", "AULYA MULYANAH", "AHMAD ZACKY BAIHAQI HIDAYAT", 
+      "MULKI ALIFA HAKIM", "FAIZ ZACKY AL AGHNY"
+    ];
+
+    function setStatusKategori(kategoriTerpilih) {
+      const namaMahasiswa = studentInput.value.trim();
+
+      if (!namaMahasiswa) {
+        statusKategori.style.display = "none";
+        return;
+      }
+
+      if (!kategoriTerpilih) {
+        statusKategori.textContent = "Please select a category...";
+        statusKategori.className = "status-belum-pilih";
+        statusKategori.style.display = "block";
+      } else {
+        statusKategori.textContent = "Selected Category: " + kategoriTerpilih;
+        statusKategori.className = "status-sudah-pilih";
+        statusKategori.style.display = "block";
+      }
+    }
+
+    function updateCategoriesLockState(isTypingNewName = false) {
+      const isInputEmpty = !studentInput.value.trim();
+      document.querySelectorAll(".category").forEach(div => {
+        if (isInputEmpty) {
+          div.classList.add("disabled-click");
+        } else {
+          div.classList.remove("disabled-click");
+        }
+      });
+
+      if (isTypingNewName) {
+        setStatusKategori("");
+      } else {
+        setStatusKategori(statusKategori.classList.contains("status-sudah-pilih") ? statusKategori.textContent.replace("Selected Category: ", "") : "");
+      }
+    }
+
+    studentInput.addEventListener("input", function() {
+      const val = this.value.toUpperCase();
+      suggestionsContainer.innerHTML = "";
+      updateCategoriesLockState(true); 
+      
+      if (!val) return false;
+
+      const filteredStudents = students.filter(student => student.includes(val));
+      
+      filteredStudents.forEach(student => {
+        const div = document.createElement("div");
+        div.className = "autocomplete-suggestion";
+        const index = student.indexOf(val);
+        div.innerHTML = student.substr(0, index) + "<strong>" + student.substr(index, val.length) + "</strong>" + student.substr(index + val.length);
+        
+        div.addEventListener("click", function() {
+          studentInput.value = student;
+          suggestionsContainer.innerHTML = "";
+          updateCategoriesLockState(true); 
+        });
+        suggestionsContainer.appendChild(div);
+      });
+    });
+
+    document.addEventListener("click", function (e) {
+      if (e.target !== studentInput) {
+        suggestionsContainer.innerHTML = "";
+      }
+    });
+
+    const sounds = {
+      niceTry: document.getElementById("niceTry"),
+      notBad: document.getElementById("notBad"),
+      goodJob: document.getElementById("goodJob"),
+      applause: document.getElementById("applause"),
+      shuffle: document.getElementById("shuffleSound")
+    };
+
+    function playFeedbackSound(score) {
+      Object.values(sounds).forEach(audio => {
+        audio.pause();
+        audio.currentTime = 0;
+      });
+
+      if (score < 50) {
+        sounds.niceTry.play();
+      } else if (score < 70) {
+        sounds.notBad.play();
+      } else if (score < 90) {
+        sounds.goodJob.play();
+      } else {
+        sounds.applause.play();
+      }
+    }
+
+    function tampilkanGlow() {
+      glowLayer.style.animation = "none";
+      void glowLayer.offsetWidth;
+      glowLayer.style.animation = "glowBurst 1s ease-out forwards";
+    }
+
+    function tampilkanOrnamen() {
+      const simbol = ['🎉', '✨', '⭐', '💥', '🎈', '🌟'];
+      for (let i = 0; i < 30; i++) {
+        const ornamen = document.createElement('div');
+        ornamen.className = 'ornamen';
+        ornamen.textContent = simbol[Math.floor(Math.random() * simbol.length)];
+        const startX = Math.random() * 100;
+        const offsetX = (Math.random() - 0.5) * 200;
+        const rotasi = Math.random() * 720 - 360;
+        ornamen.style.left = `${startX}vw`;
+        ornamen.style.top = '-50px';
+        ornamen.style.fontSize = `${Math.random() * 20 + 20}px`;
+        ornamen.style.setProperty('--x', `${offsetX}px`);
+        ornamen.style.setProperty('--r', `${rotasi}deg`);
+        ornamenContainer.appendChild(ornamen);
+        setTimeout(() => ornamen.remove(), 2000);
+      }
+    }
+
+    firebase.database().ref('trigger').on('value', function(snapshot) {
+      const val = snapshot.val();
+      if (val && typeof val === 'object' && val.label && val.skor !== undefined) {
+        const score = parseInt(val.skor);
+        skorDisplay.textContent = val.label;
+        skorDisplay.style.visibility = 'visible';
+        skorDisplay.classList.remove('shake');
+        void skorDisplay.offsetWidth;
+      
+        skorDisplay.classList.add('shake');
+
+        playFeedbackSound(score);
+        tampilkanGlow();
+        tampilkanOrnamen();
+
+        document.querySelectorAll('.category').forEach(cat => {
+          cat.classList.add('shake');
+        });
+        setTimeout(() => {
+          document.querySelectorAll('.category').forEach(cat => {
+            cat.classList.remove('shake');
+          });
+        }, 700);
+
+        setTimeout(() => {
+          skorDisplay.style.visibility = 'hidden';
+          skorDisplay.textContent = '';
+          firebase.database().ref('trigger').set('idle');
+        }, 3000);
+      }
+    });
+
+    firebase.database().ref('active_session').on('value', function(snapshot) {
+      const val = snapshot.val();
+      if (val) {
+        if (val.status === 'reset' || val.status === 'timeout_clear') {
+          studentInput.value = "";
+          setStatusKategori(""); 
+          updateCategoriesLockState(false);
+        } else if (val.status === 'active') {
+          if (val.mahasiswa) studentInput.value = val.mahasiswa;
+          setStatusKategori(val.kategori || ""); 
+          
+          const isInputEmpty = !studentInput.value.trim();
+          document.querySelectorAll(".category").forEach(div => {
+            if (isInputEmpty) div.classList.add("disabled-click");
+            else div.classList.remove("disabled-click");
+          });
+        }
+      }
+    });
+
+    const categories = [
+      "Languages' influence to English", "RANDOM 70 pts", "Restoration Period", "Canterbury Tales", 
+      "Modernism in Post-War", "The Passionate Shepherd to His Love", "Shall I Compare Thee to a Summer's Day", "Post-Modernism", 
+      "Medieval English Literature", "Ballad and Ode", "Metaphysical Poet", "RANDOM 80 pts", 
+      "Victorian Period", "Allusion, Pastiche, Intertextuality", "Alliteration, Assonance, Consonance", "Robin Hood & the Three Squires", 
+      "Gothic Elements", "Women in Victorian Period", "Romantic Period", "Blank Verse", 
+      "Modernism", "The Waste Land", "Anglo-Saxon Literature", "Poem Recital 25 pts", 
+      "Renaissance Period", "Dark Romanticism", "Epistolary Literature", "Ode on Solitude", 
+      "Prosody in Poetry", "Frankenstein", "RANDOM 90 pts", "Sonnet", 
+      "Realism & Naturalism", "Story within story", "My Last Duchess", "Impressionism in Literature"
+    ];
+    const colors = [
+      "#e74c3c", "#3498db", "#2ecc71", "#9b59b6", "#f39c12",
+      "#1abc9c", "#e67e22", "#34495e", "#d35400", "#7f8c8d",
+      "#16a085", "#c0392b", "#2980b9", "#8e44ad", "#27ae60"
+    ];
+    let clickCount = 0;
+    const maxClicks = 5;
+
+    function shuffleAndDisplay() {
+      sounds.shuffle.play().catch(() => {});
+      container.innerHTML = "";
+      const shuffled = categories.sort(() => 0.5 - Math.random()).slice(0, 9);
+      
+      shuffled.forEach((cat, index) => {
+        const div = document.createElement("div");
+        div.className = "category floating-category";
+        div.textContent = cat;
+        div.style.backgroundColor = colors[index % colors.length];
+        
+        const randomDuration = (Math.random() * 3 + 4).toFixed(2);
+        const randomDelay = (Math.random() * -5).toFixed(2);
+        
+        div.style.animationDuration = `${randomDuration}s`;
+        div.style.animationDelay = `${randomDelay}s`;
+        
+        if (Math.random() > 0.5) {
+          div.style.animationDirection = "alternate-reverse";
+        }
+
+        div.addEventListener("click", function() {
+          if (div.classList.contains("disabled-click")) {
+            return;
+          }
+
+          const selectedStudent = studentInput.value.trim();
+          console.log("Mengirim data awal: " + selectedStudent + " - " + cat);
+          
+          sounds.shuffle.currentTime = 0;
+          sounds.shuffle.play().catch(() => {});
+          
+          fetch(SCRIPT_URL, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ 
+              mahasiswa: selectedStudent,
+              kategori: cat 
+            })
+          }).catch(error => console.error("Gagal mengirim data awal:", error));
+
+          firebase.database().ref('active_session').set({
+            mahasiswa: selectedStudent,
+            kategori: cat,
+            status: "active"
+          });
+        });
+
+        container.appendChild(div);
+      });
+
+      setStatusKategori(""); 
+      updateCategoriesLockState(false);
+      
+      clickCount++;
+      if (clickCount >= maxClicks) {
+        shuffleBtn.disabled = true;
+      }
+    }
+
+    shuffleBtn.addEventListener("click", shuffleAndDisplay);
+    
+    function unlockAudio() {
+      document.getElementById("starter").style.display = "none";
+      Object.values(sounds).forEach(audio => {
+        audio.play().catch(() => {});
+        audio.pause();
+        audio.currentTime = 0;
+      });
+      const elem = document.documentElement;
+      if (elem.requestFullscreen) {
+        elem.requestFullscreen();
+      } else if (elem.webkitRequestFullscreen) {
+        elem.webkitRequestFullscreen();
+      } else if (elem.msRequestFullscreen) {
+        elem.msRequestFullscreen();
+      }
+    }
+  </script>
+</body>
+</html>
